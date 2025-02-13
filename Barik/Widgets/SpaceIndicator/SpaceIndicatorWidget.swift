@@ -1,7 +1,7 @@
 import SwiftUICore
 
 struct SpaceIndicatorWidget: View {
-    @ObservedObject var viewModel = SpaceViewModel()
+    @ObservedObject var viewModel = SpaceViewModel(provider: AerospaceSpacesProvider())
 
     var body: some View {
         HStack(spacing: 8) {
@@ -15,7 +15,7 @@ struct SpaceIndicatorWidget: View {
 
 /// This view shows a space with its windows.
 private struct SpaceView: View {
-    let space: SpaceEntity
+    let space: any SpaceModel
 
     var body: some View {
         let isFocused = space.windows.contains { $0.isFocused }
@@ -25,7 +25,7 @@ private struct SpaceView: View {
                 .font(.headline)
                 .frame(minWidth: 15)
                 .fixedSize(horizontal: true, vertical: false)
-            ForEach(space.windows) { window in
+            ForEach(space.windows, id: \.id) { window in
                 WindowView(window: window, space: space)
             }
             Spacer().frame(width: 2)
@@ -42,8 +42,8 @@ private struct SpaceView: View {
 
 /// This view shows a window and its icon.
 private struct WindowView: View {
-    let window: WindowEntity
-    let space: SpaceEntity
+    let window: any WindowModel
+    let space: any SpaceModel
 
     var body: some View {
         let titleMaxLength = 50

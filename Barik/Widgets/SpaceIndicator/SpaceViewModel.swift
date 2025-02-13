@@ -1,118 +1,65 @@
-import Combine
 import Foundation
+import AppKit
+import Combine
 
-/// This view model loads the spaces and their windows.
-class SpaceViewModel: ObservableObject {
-    @Published var spaces: [SpaceEntity] = []
+class IconCache {
+    static let shared = IconCache()
+    private let cache = NSCache<NSString, NSImage>()
+    private init() {}
+    func icon(for appName: String) -> NSImage? {
+        if let cachedIcon = cache.object(forKey: appName as NSString) {
+            return cachedIcon
+        }
+        let workspace = NSWorkspace.shared
+        if let app = workspace.runningApplications.first(where: { $0.localizedName == appName }),
+           let bundleURL = app.bundleURL {
+            let icon = workspace.icon(forFile: bundleURL.path)
+            cache.setObject(icon, forKey: appName as NSString)
+            return icon
+        }
+        return nil
+    }
+}
+
+protocol SpacesProvider {
+    associatedtype SpaceType: SpaceModel
+    func getSpacesWithWindows() -> [SpaceType]?
+}
+
+class SpaceViewModel<Provider: SpacesProvider>: ObservableObject {
+    @Published var spaces: [Provider.SpaceType] = []
     private var timer: Timer?
-
-    init() {
+    private var provider: Provider
+    
+    init(provider: Provider) {
+        self.provider = provider
         startMonitoring()
     }
-
+    
     deinit {
         stopMonitoring()
     }
-
+    
     private func startMonitoring() {
-        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) {
-            [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
             self?.loadSpaces()
         }
         loadSpaces()
     }
-
+    
     private func stopMonitoring() {
         timer?.invalidate()
         timer = nil
     }
-
+    
     private func loadSpaces() {
         DispatchQueue.global(qos: .background).async {
-            if let fetchedSpaces = getSpacesWithWindows() {
-                let sortedSpaces = fetchedSpaces.sorted { $0.id < $1.id }
+            if let spaces = self.provider.getSpacesWithWindows() {
+                let sortedSpaces = spaces.sorted { "\($0.id)" < "\($1.id)" }
                 DispatchQueue.main.async {
                     self.spaces = sortedSpaces
                 }
             }
         }
     }
-}
-
-// MARK: - Yabai Commands
-
-/// Run a yabai command and return its output data.
-private func runYabaiCommand(arguments: [String]) -> Data? {
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/yabai")
-    process.arguments = arguments
-    let pipe = Pipe()
-    process.standardOutput = pipe
-    do {
-        try process.run()
-    } catch {
-        print("Failed to run yabai: \(error)")
-        return nil
-    }
-    let data = pipe.fileHandleForReading.readDataToEndOfFile()
-    process.waitUntilExit()
-    return data
-}
-
-/// Get the list of spaces.
-private func fetchSpaces() -> [SpaceEntity]? {
-    guard let data = runYabaiCommand(arguments: ["-m", "query", "--spaces"])
-    else {
-        return nil
-    }
-    let decoder = JSONDecoder()
-    do {
-        let spaces = try decoder.decode([SpaceEntity].self, from: data)
-        return spaces
-    } catch {
-        print("Failed to decode spaces: \(error)")
-        return nil
-    }
-}
-
-/// Get the list of windows.
-private func fetchWindows() -> [WindowEntity]? {
-    guard let data = runYabaiCommand(arguments: ["-m", "query", "--windows"])
-    else {
-        return nil
-    }
-    let decoder = JSONDecoder()
-    do {
-        let windows = try decoder.decode([WindowEntity].self, from: data)
-        return windows
-    } catch {
-        print("Failed to decode windows: \(error)")
-        return nil
-    }
-}
-
-/// Combine spaces and their windows.
-private func getSpacesWithWindows() -> [SpaceEntity]? {
-    guard let spaces = fetchSpaces(), let windows = fetchWindows() else {
-        return nil
-    }
-
-    let filteredWindows = windows.filter {
-        !($0.isHidden || $0.isFloating || $0.isSticky)
-    }
-    var spaceDict = Dictionary(uniqueKeysWithValues: spaces.map { ($0.id, $0) })
-
-    for window in filteredWindows {
-        if var space = spaceDict[window.spaceId] {
-            space.windows.append(window)
-            spaceDict[window.spaceId] = space
-        }
-    }
-
-    var resultSpaces = Array(spaceDict.values)
-    for index in 0..<resultSpaces.count {
-        resultSpaces[index].windows.sort { $0.stackIndex < $1.stackIndex }
-    }
-
-    return resultSpaces.filter { !$0.windows.isEmpty }
 }
