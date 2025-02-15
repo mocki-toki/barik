@@ -25,7 +25,7 @@ struct AnyWindow: Identifiable, Equatable {
     let appName: String?
     let isFocused: Bool
     let appIcon: NSImage?
-    
+
     init<W: WindowModel>(_ window: W) {
         self.id = window.id
         self.title = window.title
@@ -33,12 +33,10 @@ struct AnyWindow: Identifiable, Equatable {
         self.isFocused = window.isFocused
         self.appIcon = window.appIcon
     }
-    
+
     static func == (lhs: AnyWindow, rhs: AnyWindow) -> Bool {
-        return lhs.id == rhs.id &&
-            lhs.title == rhs.title &&
-            lhs.appName == rhs.appName &&
-            lhs.isFocused == rhs.isFocused
+        return lhs.id == rhs.id && lhs.title == rhs.title
+            && lhs.appName == rhs.appName && lhs.isFocused == rhs.isFocused
     }
 }
 
@@ -46,7 +44,7 @@ struct AnySpace: Identifiable, Equatable {
     let id: String
     let isFocused: Bool
     let windows: [AnyWindow]
-    
+
     init<S: SpaceModel>(_ space: S) {
         if let aero = space as? AeroSpace {
             self.id = aero.workspace
@@ -58,14 +56,12 @@ struct AnySpace: Identifiable, Equatable {
         self.isFocused = space.isFocused
         self.windows = space.windows.map { AnyWindow($0) }
     }
-    
+
     static func == (lhs: AnySpace, rhs: AnySpace) -> Bool {
-        return lhs.id == rhs.id &&
-            lhs.isFocused == rhs.isFocused &&
-            lhs.windows == rhs.windows
+        return lhs.id == rhs.id && lhs.isFocused == rhs.isFocused
+            && lhs.windows == rhs.windows
     }
 }
-
 
 class AnySpacesProvider {
     private let _getSpacesWithWindows: () -> [AnySpace]?

@@ -11,7 +11,7 @@ struct YabaiWindow: WindowModel {
     let isFloating: Bool
     let isSticky: Bool
     let spaceId: Int
-    
+
     enum CodingKeys: String, CodingKey {
         case id
         case spaceId = "space"
@@ -23,15 +23,18 @@ struct YabaiWindow: WindowModel {
         case isFloating = "is-floating"
         case isSticky = "is-sticky"
     }
-    
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(Int.self, forKey: .id)
         spaceId = try container.decode(Int.self, forKey: .spaceId)
-        title = try container.decodeIfPresent(String.self, forKey: .title) ?? "Unnamed"
+        title =
+            try container.decodeIfPresent(String.self, forKey: .title)
+            ?? "Unnamed"
         appName = try container.decodeIfPresent(String.self, forKey: .appName)
         isFocused = try container.decode(Bool.self, forKey: .isFocused)
-        stackIndex = try container.decodeIfPresent(Int.self, forKey: .stackIndex) ?? 0
+        stackIndex =
+            try container.decodeIfPresent(Int.self, forKey: .stackIndex) ?? 0
         isHidden = try container.decode(Bool.self, forKey: .isHidden)
         isFloating = try container.decode(Bool.self, forKey: .isFloating)
         isSticky = try container.decode(Bool.self, forKey: .isSticky)
@@ -46,7 +49,7 @@ struct YabaiSpace: SpaceModel {
     let id: Int
     var isFocused: Bool
     var windows: [YabaiWindow] = []
-    
+
     enum CodingKeys: String, CodingKey {
         case id = "index"
         case isFocused = "has-focus"

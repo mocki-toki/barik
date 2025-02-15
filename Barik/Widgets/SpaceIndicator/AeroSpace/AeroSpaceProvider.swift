@@ -2,7 +2,7 @@ import Foundation
 
 class AerospaceSpacesProvider: SpacesProvider {
     typealias SpaceType = AeroSpace
-    
+
     func getSpacesWithWindows() -> [AeroSpace]? {
         guard var spaces = fetchSpaces(), let windows = fetchWindows() else {
             return nil
@@ -13,7 +13,8 @@ class AerospaceSpacesProvider: SpacesProvider {
             }
         }
         let focusedWindow = fetchFocusedWindow()
-        var spaceDict = Dictionary(uniqueKeysWithValues: spaces.map { ($0.id, $0) })
+        var spaceDict = Dictionary(
+            uniqueKeysWithValues: spaces.map { ($0.id, $0) })
         for window in windows {
             var mutableWindow = window
             if let focused = focusedWindow, window.id == focused.id {
@@ -37,10 +38,11 @@ class AerospaceSpacesProvider: SpacesProvider {
         }
         return resultSpaces.filter { !$0.windows.isEmpty }
     }
-    
+
     private func runAerospaceCommand(arguments: [String]) -> Data? {
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/aerospace")
+        process.executableURL = URL(
+            fileURLWithPath: "/opt/homebrew/bin/aerospace")
         process.arguments = arguments
         let pipe = Pipe()
         process.standardOutput = pipe
@@ -54,9 +56,13 @@ class AerospaceSpacesProvider: SpacesProvider {
         process.waitUntilExit()
         return data
     }
-    
+
     private func fetchSpaces() -> [AeroSpace]? {
-        guard let data = runAerospaceCommand(arguments: ["list-workspaces", "--all", "--json"]) else {
+        guard
+            let data = runAerospaceCommand(arguments: [
+                "list-workspaces", "--all", "--json",
+            ])
+        else {
             return nil
         }
         let decoder = JSONDecoder()
@@ -68,9 +74,14 @@ class AerospaceSpacesProvider: SpacesProvider {
             return nil
         }
     }
-    
+
     private func fetchWindows() -> [AeroWindow]? {
-        guard let data = runAerospaceCommand(arguments: ["list-windows", "--all", "--json", "--format", "%{window-id} %{app-name} %{window-title} %{workspace}"]) else {
+        guard
+            let data = runAerospaceCommand(arguments: [
+                "list-windows", "--all", "--json", "--format",
+                "%{window-id} %{app-name} %{window-title} %{workspace}",
+            ])
+        else {
             return nil
         }
         let decoder = JSONDecoder()
@@ -82,9 +93,13 @@ class AerospaceSpacesProvider: SpacesProvider {
             return nil
         }
     }
-    
+
     private func fetchFocusedSpace() -> AeroSpace? {
-        guard let data = runAerospaceCommand(arguments: ["list-workspaces", "--focused", "--json"]) else {
+        guard
+            let data = runAerospaceCommand(arguments: [
+                "list-workspaces", "--focused", "--json",
+            ])
+        else {
             return nil
         }
         let decoder = JSONDecoder()
@@ -96,9 +111,13 @@ class AerospaceSpacesProvider: SpacesProvider {
             return nil
         }
     }
-    
+
     private func fetchFocusedWindow() -> AeroWindow? {
-        guard let data = runAerospaceCommand(arguments: ["list-windows", "--focused", "--json"]) else {
+        guard
+            let data = runAerospaceCommand(arguments: [
+                "list-windows", "--focused", "--json",
+            ])
+        else {
             return nil
         }
         let decoder = JSONDecoder()

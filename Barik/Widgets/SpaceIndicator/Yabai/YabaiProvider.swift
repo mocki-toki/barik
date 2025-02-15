@@ -21,7 +21,9 @@ class YabaiSpacesProvider: SpacesProvider {
     }
 
     private func fetchSpaces() -> [YabaiSpace]? {
-        guard let data = runYabaiCommand(arguments: ["-m", "query", "--spaces"]) else {
+        guard
+            let data = runYabaiCommand(arguments: ["-m", "query", "--spaces"])
+        else {
             return nil
         }
         let decoder = JSONDecoder()
@@ -35,7 +37,9 @@ class YabaiSpacesProvider: SpacesProvider {
     }
 
     private func fetchWindows() -> [YabaiWindow]? {
-        guard let data = runYabaiCommand(arguments: ["-m", "query", "--windows"]) else {
+        guard
+            let data = runYabaiCommand(arguments: ["-m", "query", "--windows"])
+        else {
             return nil
         }
         let decoder = JSONDecoder()
@@ -52,8 +56,11 @@ class YabaiSpacesProvider: SpacesProvider {
         guard var spaces = fetchSpaces(), let windows = fetchWindows() else {
             return nil
         }
-        let filteredWindows = windows.filter { !($0.isHidden || $0.isFloating || $0.isSticky) }
-        var spaceDict = Dictionary(uniqueKeysWithValues: spaces.map { ($0.id, $0) })
+        let filteredWindows = windows.filter {
+            !($0.isHidden || $0.isFloating || $0.isSticky)
+        }
+        var spaceDict = Dictionary(
+            uniqueKeysWithValues: spaces.map { ($0.id, $0) })
         for window in filteredWindows {
             if var space = spaceDict[window.spaceId] {
                 space.windows.append(window)

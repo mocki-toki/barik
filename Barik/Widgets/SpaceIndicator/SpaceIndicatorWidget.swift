@@ -2,7 +2,7 @@ import SwiftUICore
 
 struct SpaceIndicatorWidget: View {
     @ObservedObject var viewModel = SpaceViewModel()
-    
+
     var body: some View {
         HStack(spacing: 8) {
             ForEach(viewModel.spaces) { space in
@@ -16,7 +16,7 @@ struct SpaceIndicatorWidget: View {
 /// This view shows a space with its windows.
 private struct SpaceView: View {
     let space: AnySpace
-    
+
     var body: some View {
         let isFocused = space.windows.contains { $0.isFocused }
         HStack(spacing: 8) {
@@ -44,11 +44,12 @@ private struct SpaceView: View {
 private struct WindowView: View {
     let window: AnyWindow
     let space: AnySpace
-    
+
     var body: some View {
         let titleMaxLength = 50
         let size: CGFloat = 21
-        let sameAppCount = space.windows.filter { $0.appName == window.appName }.count
+        let sameAppCount = space.windows.filter { $0.appName == window.appName }
+            .count
         let title = sameAppCount > 1 ? window.title : (window.appName ?? "")
         let spaceIsFocused = space.windows.contains { $0.isFocused }
         HStack {

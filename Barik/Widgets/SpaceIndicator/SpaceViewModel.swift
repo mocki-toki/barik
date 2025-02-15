@@ -1,14 +1,16 @@
-import Foundation
 import AppKit
 import Combine
+import Foundation
 
 class SpaceViewModel: ObservableObject {
     @Published var spaces: [AnySpace] = []
     private var timer: Timer?
     private var provider: AnySpacesProvider?
-    
+
     init() {
-        let runningApps = NSWorkspace.shared.runningApplications.compactMap { $0.localizedName?.lowercased() }
+        let runningApps = NSWorkspace.shared.runningApplications.compactMap {
+            $0.localizedName?.lowercased()
+        }
         if runningApps.contains("yabai") {
             provider = AnySpacesProvider(YabaiSpacesProvider())
         } else if runningApps.contains("aerospace") {
@@ -18,27 +20,29 @@ class SpaceViewModel: ObservableObject {
         }
         startMonitoring()
     }
-    
+
     deinit {
         stopMonitoring()
     }
-    
+
     private func startMonitoring() {
-        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) {
+            [weak self] _ in
             self?.loadSpaces()
         }
         loadSpaces()
     }
-    
+
     private func stopMonitoring() {
         timer?.invalidate()
         timer = nil
     }
-    
+
     private func loadSpaces() {
         DispatchQueue.global(qos: .background).async {
             guard let provider = self.provider,
-                  let spaces = provider.getSpacesWithWindows() else {
+                let spaces = provider.getSpacesWithWindows()
+            else {
                 DispatchQueue.main.async {
                     self.spaces = []
                 }
@@ -52,7 +56,6 @@ class SpaceViewModel: ObservableObject {
     }
 }
 
-
 class IconCache {
     static let shared = IconCache()
     private let cache = NSCache<NSString, NSImage>()
@@ -62,8 +65,11 @@ class IconCache {
             return cached
         }
         let workspace = NSWorkspace.shared
-        if let app = workspace.runningApplications.first(where: { $0.localizedName == appName }),
-           let bundleURL = app.bundleURL {
+        if let app = workspace.runningApplications.first(where: {
+            $0.localizedName == appName
+        }),
+            let bundleURL = app.bundleURL
+        {
             let icon = workspace.icon(forFile: bundleURL.path)
             cache.setObject(icon, forKey: appName as NSString)
             return icon
