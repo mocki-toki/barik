@@ -1,8 +1,8 @@
 import SwiftUICore
 
 struct SpaceIndicatorWidget: View {
-    @ObservedObject var viewModel = SpaceViewModel(provider: AerospaceSpacesProvider())
-
+    @ObservedObject var viewModel = SpaceViewModel()
+    
     var body: some View {
         HStack(spacing: 8) {
             ForEach(viewModel.spaces) { space in
@@ -15,17 +15,17 @@ struct SpaceIndicatorWidget: View {
 
 /// This view shows a space with its windows.
 private struct SpaceView: View {
-    let space: any SpaceModel
-
+    let space: AnySpace
+    
     var body: some View {
         let isFocused = space.windows.contains { $0.isFocused }
         HStack(spacing: 8) {
             Spacer().frame(width: 2)
-            Text("\(space.id)")
+            Text(space.id)
                 .font(.headline)
                 .frame(minWidth: 15)
                 .fixedSize(horizontal: true, vertical: false)
-            ForEach(space.windows, id: \.id) { window in
+            ForEach(space.windows) { window in
                 WindowView(window: window, space: space)
             }
             Spacer().frame(width: 2)
@@ -42,16 +42,14 @@ private struct SpaceView: View {
 
 /// This view shows a window and its icon.
 private struct WindowView: View {
-    let window: any WindowModel
-    let space: any SpaceModel
-
+    let window: AnyWindow
+    let space: AnySpace
+    
     var body: some View {
         let titleMaxLength = 50
         let size: CGFloat = 21
-        // Use the window title if there are more than one window of the same app.
-        let title =
-            space.windows.filter { $0.appName == window.appName }.count > 1
-            ? window.title : (window.appName ?? "")
+        let sameAppCount = space.windows.filter { $0.appName == window.appName }.count
+        let title = sameAppCount > 1 ? window.title : (window.appName ?? "")
         let spaceIsFocused = space.windows.contains { $0.isFocused }
         HStack {
             ZStack {
@@ -81,6 +79,7 @@ private struct WindowView: View {
                     )
                     .fixedSize(horizontal: true, vertical: false)
                     .shadow(color: .foregroundShadow, radius: 3)
+                    .fontWeight(.semibold)
                     Spacer().frame(width: 5)
                 }
                 .transition(.blurReplace)

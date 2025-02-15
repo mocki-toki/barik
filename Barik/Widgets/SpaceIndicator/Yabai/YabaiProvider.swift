@@ -5,7 +5,7 @@ class YabaiSpacesProvider: SpacesProvider {
 
     private func runYabaiCommand(arguments: [String]) -> Data? {
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/local/bin/yabai")
+        process.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/yabai")
         process.arguments = arguments
         let pipe = Pipe()
         process.standardOutput = pipe
@@ -52,8 +52,9 @@ class YabaiSpacesProvider: SpacesProvider {
         guard var spaces = fetchSpaces(), let windows = fetchWindows() else {
             return nil
         }
+        let filteredWindows = windows.filter { !($0.isHidden || $0.isFloating || $0.isSticky) }
         var spaceDict = Dictionary(uniqueKeysWithValues: spaces.map { ($0.id, $0) })
-        for window in windows {
+        for window in filteredWindows {
             if var space = spaceDict[window.spaceId] {
                 space.windows.append(window)
                 spaceDict[window.spaceId] = space
@@ -61,7 +62,7 @@ class YabaiSpacesProvider: SpacesProvider {
         }
         var resultSpaces = Array(spaceDict.values)
         for i in 0..<resultSpaces.count {
-            resultSpaces[i].windows.sort { $0.id < $1.id }
+            resultSpaces[i].windows.sort { $0.stackIndex < $1.stackIndex }
         }
         return resultSpaces.filter { !$0.windows.isEmpty }
     }
