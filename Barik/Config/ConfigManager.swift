@@ -62,6 +62,7 @@ final class ConfigManager: ObservableObject {
             displayed = [ # widgets on menu bar
             "default.spaces",
             "spacer",
+            "default.spotify",
             "default.network",
             "default.battery",
             "divider",

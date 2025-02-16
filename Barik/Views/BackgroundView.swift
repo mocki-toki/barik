@@ -15,7 +15,6 @@ struct BackgroundView: View {
             }
 
         Spacer()
-            .background(.regularMaterial)
-            .preferredColorScheme(theme)
+                .preferredColorScheme(theme)
     }
 }
