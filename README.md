@@ -16,7 +16,7 @@
   </p>
 </p>
 
-**barik** is a lightweight macOS menu bar replacement. Powered by [**yabai**](https://github.com/koekeishiya/yabai) and displays the currently selected space in a sleek, macOS-style panel with animations. Now you know which number to press to switch to the desired space!
+**barik** is a lightweight macOS menu bar replacement. If you use [**yabai**](https://github.com/koekeishiya/yabai) or [**AeroSpace**](https://github.com/nikitabobko/AeroSpace) for tiling WM, you can display the current space in a sleek macOS-style panel with smooth animations. This makes it easy to see which number to press to switch spaces.
 
 <br>
 
@@ -35,28 +35,63 @@
 ## Requirements
 
 - macOS 14.6+
-- yabai
 
 ## Quick Start
 
-1. Install [yabai](https://github.com/koekeishiya/yabai), set up spaces and paddings ([example](https://github.com/mocki-toki/barik/blob/main/example/.yabairc))
-2. Install [skhd](https://github.com/koekeishiya/skhd) for switching spaces (or use another hotkey manager— for example, I like to use [Raycast](https://www.raycast.com/) scripts)
-3. Download barik from [Releases](https://github.com/mocki-toki/barik/releases), unzip and move it to your Applications folder
-4. Hide the system menu bar in System Settings
-5. Run barik from the Applications folder
-6. Add barik to your login items
+1. Download **barik** from [Releases](https://github.com/mocki-toki/barik/releases), unzip it, and move it to your Applications folder.
+2. _(Optional)_ To display open applications and spaces, install [**yabai**](https://github.com/koekeishiya/yabai) or [**AeroSpace**](https://github.com/nikitabobko/AeroSpace) and set up hotkeys. For **yabai**, you'll need **skhd** or **Raycast scripts**.
+3. Hide the system menu bar in **System Settings** and uncheck **Desktop & Dock → Show items → On Desktop**.
+4. Launch **barik** from the Applications folder.
+5. Add **barik** to your login items for automatic startup.
 
 **That's it!** Try switching spaces and see the panel in action.
 
+## Configuration
+
+When you launch **barik** for the first time, it will create a `~/.barik-config.toml` file with an example customization for your new menu bar.
+
+```toml
+theme = "system" # system, light, dark
+
+[widgets]
+displayed = [ # widgets on menu bar
+    "default.spaces",
+    "spacer",
+    "default.network",
+    "default.battery",
+    "divider",
+    # { "default.time" = { time-zone = "America/Los_Angeles", format = "E d, hh:mm" } },
+    "default.time",
+]
+
+[widgets.default.spaces]
+window.title.max-length = 50
+
+[widgets.default.battery]
+show-percentage = true
+warning-level = 30
+critical-level = 10
+
+[widgets.default.time]
+format = "E d, J:mm"
+calendar.format = "J:mm"
+
+calendar.show-events = true
+# calendar.allow-list = ["Home", "Personal"] # show only these calendars
+# calendar.deny-list = ["Work", "Boss"] # show all calendars except these
+```
+
+Currently, you can customize the order of widgets (time, indicators, etc.) and adjust some of their settings. Soon, you’ll also be able to add custom widgets and completely change **barik**'s appearance—making it almost unrecognizable (hello, r/unixporn!).
+
 ## Why Aren't the Space Indicators Clickable?
 
-PR [#7](https://github.com/mocki-toki/barik/issues/7)
+[#7](https://github.com/mocki-toki/barik/issues/7)
 
 The space indicators are not clickable because barik is designed to be keyboard-driven. Use keyboard shortcuts to switch spaces, for example with [skhd](https://github.com/koekeishiya/skhd) or [Raycast](https://www.raycast.com/) scripts.
 
 ## Where Are the Menu Items?
 
-PR [#5](https://github.com/mocki-toki/barik/issues/5), [#1](https://github.com/mocki-toki/barik/issues/1)
+[#5](https://github.com/mocki-toki/barik/issues/5), [#1](https://github.com/mocki-toki/barik/issues/1)
 
 Menu items are not supported. The original philosophy of barik is to minimize unnecessary information and emphasize keyboard-driven control. However, you can use [Raycast](https://www.raycast.com/), which supports menu items through an interface similar to Spotlight. I personally use it with the `option + tab` shortcut, and it works very well.
 
