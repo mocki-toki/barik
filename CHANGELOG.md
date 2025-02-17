@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.1
+
+- Fixed display issue with Notch
+
 ## 0.4.0
 
 - Added support for `~/.barik-config.toml` configuration file
