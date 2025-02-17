@@ -19,7 +19,7 @@ struct SpacesWidget: View {
 private struct SpaceView: View {
     let space: AnySpace
     @EnvironmentObject var viewModel: SpacesViewModel
-    
+
     @State var isHovered = false
 
     var body: some View {
@@ -40,7 +40,9 @@ private struct SpaceView: View {
         }
         .frame(height: 30)
         .background(
-            isFocused ? Color.active : isHovered ? Color.noActive.opacity(0.5) : Color.noActive
+            isFocused
+                ? Color.active
+                : isHovered ? Color.noActive.opacity(0.5) : Color.noActive
         )
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .shadow(color: .shadow, radius: 2)

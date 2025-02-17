@@ -79,7 +79,8 @@ class AnySpacesProvider {
         }
         if let switchable = provider as? any SwitchableSpacesProvider {
             _focusSpace = { spaceId, needWindowFocus in
-                switchable.focusSpace(spaceId: spaceId, needWindowFocus: needWindowFocus)
+                switchable.focusSpace(
+                    spaceId: spaceId, needWindowFocus: needWindowFocus)
             }
             _focusWindow = { windowId in
                 switchable.focusWindow(windowId: windowId)
@@ -97,7 +98,7 @@ class AnySpacesProvider {
     func focusSpace(spaceId: String, needWindowFocus: Bool) {
         _focusSpace?(spaceId, needWindowFocus)
     }
-    
+
     func focusWindow(windowId: String) {
         _focusWindow?(windowId)
     }

@@ -54,10 +54,11 @@ class SpacesViewModel: ObservableObject {
             }
         }
     }
-    
+
     func switchToSpace(_ space: AnySpace, needWindowFocus: Bool = false) {
         DispatchQueue.global(qos: .userInitiated).async {
-            self.provider?.focusSpace(spaceId: space.id, needWindowFocus: needWindowFocus)
+            self.provider?.focusSpace(
+                spaceId: space.id, needWindowFocus: needWindowFocus)
         }
     }
 
