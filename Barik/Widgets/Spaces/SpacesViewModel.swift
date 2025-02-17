@@ -6,7 +6,7 @@ class SpacesViewModel: ObservableObject {
     @Published var spaces: [AnySpace] = []
     private var timer: Timer?
     private var provider: AnySpacesProvider?
-
+    
     init() {
         let runningApps = NSWorkspace.shared.runningApplications.compactMap {
             $0.localizedName?.lowercased()
@@ -20,11 +20,11 @@ class SpacesViewModel: ObservableObject {
         }
         startMonitoring()
     }
-
+    
     deinit {
         stopMonitoring()
     }
-
+    
     private func startMonitoring() {
         timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) {
             [weak self] _ in
@@ -32,12 +32,26 @@ class SpacesViewModel: ObservableObject {
         }
         loadSpaces()
     }
-
+    
     private func stopMonitoring() {
         timer?.invalidate()
         timer = nil
     }
-
+    
+    private func loadLayout(){
+        guard let provider = self.provider,
+            let spaces = provider.getSpacesWithWindows()
+        else {
+            DispatchQueue.main.async {
+                self.spaces = []
+            }
+            return
+        }
+        let sortedSpaces = spaces.sorted { $0.id < $1.id }
+        DispatchQueue.main.async {
+            self.spaces = sortedSpaces
+        }
+    }
     private func loadSpaces() {
         DispatchQueue.global(qos: .background).async {
             guard let provider = self.provider,

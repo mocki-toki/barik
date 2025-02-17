@@ -4,7 +4,8 @@ struct SpacesWidget: View {
     @StateObject var viewModel = SpacesViewModel()
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 5) {
+            LayoutWidget()
             ForEach(viewModel.spaces) { space in
                 SpaceView(space: space)
             }
@@ -19,7 +20,7 @@ private struct SpaceView: View {
 
     var body: some View {
         let isFocused = space.windows.contains { $0.isFocused }
-        HStack(spacing: 8) {
+        HStack(spacing: 5) {
             Spacer().frame(width: 2)
             Text(space.id)
                 .font(.headline)
@@ -34,9 +35,13 @@ private struct SpaceView: View {
         .background(
             isFocused ? Color.active : Color.noActive
         )
+        .background(.ultraThinMaterial)
+        .preferredColorScheme(.dark)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .shadow(color: .shadow, radius: 2)
         .transition(.blurReplace)
+        
+        
     }
 }
 
@@ -57,9 +62,7 @@ private struct WindowView: View {
     var body: some View {
         let titleMaxLength = maxLength
         let size: CGFloat = 21
-        let sameAppCount = space.windows.filter { $0.appName == window.appName }
-            .count
-        let title = sameAppCount > 1 ? window.title : (window.appName ?? "")
+        let title = (window.appName ?? "")
         let spaceIsFocused = space.windows.contains { $0.isFocused }
         HStack {
             ZStack {
@@ -79,6 +82,10 @@ private struct WindowView: View {
             }
             .opacity(spaceIsFocused && !window.isFocused ? 0.5 : 1)
             .transition(.blurReplace)
+            .onTapGesture {
+               print(space)
+            }
+            
 
             if window.isFocused, !title.isEmpty {
                 HStack {
@@ -97,3 +104,4 @@ private struct WindowView: View {
         }
     }
 }
+
