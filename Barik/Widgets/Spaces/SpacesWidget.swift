@@ -17,8 +17,15 @@ struct SpacesWidget: View {
 
 /// This view shows a space with its windows.
 private struct SpaceView: View {
-    let space: AnySpace
+    @EnvironmentObject var configProvider: ConfigProvider
     @EnvironmentObject var viewModel: SpacesViewModel
+
+    var config: ConfigData { configProvider.config }
+    var spaceConfig: ConfigData { config["space"]?.dictionaryValue ?? [:] }
+    
+    var showKey: Bool { spaceConfig["show-key"]?.boolValue ?? true }
+    
+    let space: AnySpace
 
     @State var isHovered = false
 
@@ -26,11 +33,13 @@ private struct SpaceView: View {
         let isFocused = space.windows.contains { $0.isFocused }
         HStack(spacing: 0) {
             Spacer().frame(width: 10)
-            Text(space.id)
-                .font(.headline)
-                .frame(minWidth: 15)
-                .fixedSize(horizontal: true, vertical: false)
-            Spacer().frame(width: 5)
+            if showKey {
+                Text(space.id)
+                    .font(.headline)
+                    .frame(minWidth: 15)
+                    .fixedSize(horizontal: true, vertical: false)
+                Spacer().frame(width: 5)
+            }
             HStack(spacing: 2) {
                 ForEach(space.windows) { window in
                     WindowView(window: window, space: space)
@@ -61,6 +70,7 @@ private struct SpaceView: View {
 private struct WindowView: View {
     @EnvironmentObject var configProvider: ConfigProvider
     @EnvironmentObject var viewModel: SpacesViewModel
+    
     var config: ConfigData { configProvider.config }
     var windowConfig: ConfigData { config["window"]?.dictionaryValue ?? [:] }
     var titleConfig: ConfigData {

@@ -75,6 +75,7 @@ displayed = [ # widgets on menu bar
 ]
 
 [widgets.default.spaces]
+space.show-key = true        # show space number (or character, if you use AeroSpace)
 window.title.max-length = 50
 
 [widgets.default.battery]
