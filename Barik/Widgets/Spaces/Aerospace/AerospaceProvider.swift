@@ -1,6 +1,6 @@
 import Foundation
 
-class AerospaceSpacesProvider: SpacesProvider {
+class AerospaceSpacesProvider: SpacesProvider, SwitchableSpacesProvider {
     typealias SpaceType = AeroSpace
 
     func getSpacesWithWindows() -> [AeroSpace]? {
@@ -13,8 +13,7 @@ class AerospaceSpacesProvider: SpacesProvider {
             }
         }
         let focusedWindow = fetchFocusedWindow()
-        var spaceDict = Dictionary(
-            uniqueKeysWithValues: spaces.map { ($0.id, $0) })
+        var spaceDict = Dictionary(uniqueKeysWithValues: spaces.map { ($0.id, $0) })
         for window in windows {
             var mutableWindow = window
             if let focused = focusedWindow, window.id == focused.id {
@@ -39,10 +38,17 @@ class AerospaceSpacesProvider: SpacesProvider {
         return resultSpaces.filter { !$0.windows.isEmpty }
     }
 
+    func focusSpace(spaceId: String, needWindowFocus: Bool) {
+        _ = runAerospaceCommand(arguments: ["workspace", spaceId])
+    }
+    
+    func focusWindow(windowId: String) {
+        _ = runAerospaceCommand(arguments: ["focus", "--window-id", windowId])
+    }
+
     private func runAerospaceCommand(arguments: [String]) -> Data? {
         let process = Process()
-        process.executableURL = URL(
-            fileURLWithPath: "/opt/homebrew/bin/aerospace")
+        process.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/aerospace")
         process.arguments = arguments
         let pipe = Pipe()
         process.standardOutput = pipe
@@ -58,17 +64,12 @@ class AerospaceSpacesProvider: SpacesProvider {
     }
 
     private func fetchSpaces() -> [AeroSpace]? {
-        guard
-            let data = runAerospaceCommand(arguments: [
-                "list-workspaces", "--all", "--json",
-            ])
-        else {
+        guard let data = runAerospaceCommand(arguments: ["list-workspaces", "--all", "--json"]) else {
             return nil
         }
         let decoder = JSONDecoder()
         do {
-            let spaces = try decoder.decode([AeroSpace].self, from: data)
-            return spaces
+            return try decoder.decode([AeroSpace].self, from: data)
         } catch {
             print("Decode spaces error: \(error)")
             return nil
@@ -76,18 +77,12 @@ class AerospaceSpacesProvider: SpacesProvider {
     }
 
     private func fetchWindows() -> [AeroWindow]? {
-        guard
-            let data = runAerospaceCommand(arguments: [
-                "list-windows", "--all", "--json", "--format",
-                "%{window-id} %{app-name} %{window-title} %{workspace}",
-            ])
-        else {
+        guard let data = runAerospaceCommand(arguments: ["list-windows", "--all", "--json", "--format", "%{window-id} %{app-name} %{window-title} %{workspace}"]) else {
             return nil
         }
         let decoder = JSONDecoder()
         do {
-            let windows = try decoder.decode([AeroWindow].self, from: data)
-            return windows
+            return try decoder.decode([AeroWindow].self, from: data)
         } catch {
             print("Decode windows error: \(error)")
             return nil
@@ -95,17 +90,12 @@ class AerospaceSpacesProvider: SpacesProvider {
     }
 
     private func fetchFocusedSpace() -> AeroSpace? {
-        guard
-            let data = runAerospaceCommand(arguments: [
-                "list-workspaces", "--focused", "--json",
-            ])
-        else {
+        guard let data = runAerospaceCommand(arguments: ["list-workspaces", "--focused", "--json"]) else {
             return nil
         }
         let decoder = JSONDecoder()
         do {
-            let spaces = try decoder.decode([AeroSpace].self, from: data)
-            return spaces.first
+            return try decoder.decode([AeroSpace].self, from: data).first
         } catch {
             print("Decode focused space error: \(error)")
             return nil
@@ -113,17 +103,12 @@ class AerospaceSpacesProvider: SpacesProvider {
     }
 
     private func fetchFocusedWindow() -> AeroWindow? {
-        guard
-            let data = runAerospaceCommand(arguments: [
-                "list-windows", "--focused", "--json",
-            ])
-        else {
+        guard let data = runAerospaceCommand(arguments: ["list-windows", "--focused", "--json"]) else {
             return nil
         }
         let decoder = JSONDecoder()
         do {
-            let windows = try decoder.decode([AeroWindow].self, from: data)
-            return windows.first
+            return try decoder.decode([AeroWindow].self, from: data).first
         } catch {
             print("Decode focused window error: \(error)")
             return nil

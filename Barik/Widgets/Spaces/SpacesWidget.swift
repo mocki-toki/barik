@@ -8,41 +8,57 @@ struct SpacesWidget: View {
             ForEach(viewModel.spaces) { space in
                 SpaceView(space: space)
             }
-        }.animation(.smooth(duration: 0.3), value: viewModel.spaces)
-            .foregroundStyle(Color.foreground)
+        }
+        .animation(.smooth(duration: 0.3), value: viewModel.spaces)
+        .foregroundStyle(Color.foreground)
+        .environmentObject(viewModel)
     }
 }
 
 /// This view shows a space with its windows.
 private struct SpaceView: View {
     let space: AnySpace
+    @EnvironmentObject var viewModel: SpacesViewModel
+    
+    @State var isHovered = false
 
     var body: some View {
         let isFocused = space.windows.contains { $0.isFocused }
-        HStack(spacing: 8) {
-            Spacer().frame(width: 2)
+        HStack(spacing: 0) {
+            Spacer().frame(width: 10)
             Text(space.id)
                 .font(.headline)
                 .frame(minWidth: 15)
                 .fixedSize(horizontal: true, vertical: false)
-            ForEach(space.windows) { window in
-                WindowView(window: window, space: space)
+            Spacer().frame(width: 5)
+            HStack(spacing: 2) {
+                ForEach(space.windows) { window in
+                    WindowView(window: window, space: space)
+                }
             }
-            Spacer().frame(width: 2)
+            Spacer().frame(width: 10)
         }
         .frame(height: 30)
         .background(
-            isFocused ? Color.active : Color.noActive
+            isFocused ? Color.active : isHovered ? Color.noActive.opacity(0.5) : Color.noActive
         )
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .shadow(color: .shadow, radius: 2)
         .transition(.blurReplace)
+        .onTapGesture {
+            viewModel.switchToSpace(space, needWindowFocus: true)
+        }
+        .animation(.smooth, value: isHovered)
+        .onHover { value in
+            isHovered = value
+        }
     }
 }
 
 /// This view shows a window and its icon.
 private struct WindowView: View {
     @EnvironmentObject var configProvider: ConfigProvider
+    @EnvironmentObject var viewModel: SpacesViewModel
     var config: ConfigData { configProvider.config }
     var windowConfig: ConfigData { config["window"]?.dictionaryValue ?? [:] }
     var titleConfig: ConfigData {
@@ -53,6 +69,8 @@ private struct WindowView: View {
 
     let window: AnyWindow
     let space: AnySpace
+
+    @State var isHovered = false
 
     var body: some View {
         let titleMaxLength = maxLength
@@ -94,6 +112,20 @@ private struct WindowView: View {
                 }
                 .transition(.blurReplace)
             }
+        }
+        .padding(.all, 2)
+        .background(isHovered ? .foreground.opacity(0.1) : .clear)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .animation(.smooth, value: isHovered)
+        .frame(height: 30)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            viewModel.switchToSpace(space)
+            usleep(100_000)
+            viewModel.switchToWindow(window)
+        }
+        .onHover { value in
+            isHovered = value
         }
     }
 }

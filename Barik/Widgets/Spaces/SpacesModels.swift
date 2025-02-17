@@ -19,6 +19,11 @@ protocol SpacesProvider {
     func getSpacesWithWindows() -> [SpaceType]?
 }
 
+protocol SwitchableSpacesProvider: SpacesProvider {
+    func focusSpace(spaceId: String, needWindowFocus: Bool)
+    func focusWindow(windowId: String)
+}
+
 struct AnyWindow: Identifiable, Equatable {
     let id: Int
     let title: String
@@ -65,12 +70,35 @@ struct AnySpace: Identifiable, Equatable {
 
 class AnySpacesProvider {
     private let _getSpacesWithWindows: () -> [AnySpace]?
+    private let _focusSpace: ((String, Bool) -> Void)?
+    private let _focusWindow: ((String) -> Void)?
+
     init<P: SpacesProvider>(_ provider: P) {
         _getSpacesWithWindows = {
             provider.getSpacesWithWindows()?.map { AnySpace($0) }
         }
+        if let switchable = provider as? any SwitchableSpacesProvider {
+            _focusSpace = { spaceId, needWindowFocus in
+                switchable.focusSpace(spaceId: spaceId, needWindowFocus: needWindowFocus)
+            }
+            _focusWindow = { windowId in
+                switchable.focusWindow(windowId: windowId)
+            }
+        } else {
+            _focusSpace = nil
+            _focusWindow = nil
+        }
     }
+
     func getSpacesWithWindows() -> [AnySpace]? {
         _getSpacesWithWindows()
+    }
+
+    func focusSpace(spaceId: String, needWindowFocus: Bool) {
+        _focusSpace?(spaceId, needWindowFocus)
+    }
+    
+    func focusWindow(windowId: String) {
+        _focusWindow?(windowId)
     }
 }
