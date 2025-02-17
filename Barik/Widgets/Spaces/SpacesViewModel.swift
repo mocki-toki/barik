@@ -54,6 +54,18 @@ class SpacesViewModel: ObservableObject {
             }
         }
     }
+    
+    func switchToSpace(_ space: AnySpace, needWindowFocus: Bool = false) {
+        DispatchQueue.global(qos: .userInitiated).async {
+            self.provider?.focusSpace(spaceId: space.id, needWindowFocus: needWindowFocus)
+        }
+    }
+
+    func switchToWindow(_ window: AnyWindow) {
+        DispatchQueue.global(qos: .userInitiated).async {
+            self.provider?.focusWindow(windowId: String(window.id))
+        }
+    }
 }
 
 class IconCache {
