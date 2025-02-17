@@ -21,7 +21,6 @@ struct MenuBarView: View {
         }()
         
         let items = configManager.config.rootToml.widgets.displayed
-        
         // Compute the dock height using NSScreen.main, fallback to 70 if unavailable.
         let menuBarHeight: CGFloat = {
             if let screen = NSScreen.main {
@@ -30,11 +29,17 @@ struct MenuBarView: View {
                 return 70
             }
         }()
-        
-        HStack(spacing: 15) {
-            ForEach(0..<items.count, id: \.self) { index in
-                let item = items[index]
-                buildView(for: item)
+
+        HStack(spacing: 0) {
+            HStack(spacing: 15) {
+                ForEach(0..<items.count, id: \.self) { index in
+                    let item = items[index]
+                    buildView(for: item)
+                }
+            }
+            
+            if !items.contains(where: { $0.id == "system-banner" }) {
+                SystemBannerWidget(withLeftPadding: true)
             }
         }
         .foregroundStyle(Color.foregroundOutside)
@@ -70,6 +75,10 @@ struct MenuBarView: View {
                 .fill(Color.active)
                 .frame(width: 2, height: 15)
                 .clipShape(Capsule())
+            
+        case "system-banner":
+            SystemBannerWidget()
+
         default:
             Text("?\(item.id)?").foregroundColor(.red)
         }
