@@ -56,8 +56,11 @@ class YabaiSpacesProvider: SpacesProvider, SwitchableSpacesProvider {
         guard let spaces = fetchSpaces(), let windows = fetchWindows() else {
             return nil
         }
-        let filteredWindows = windows.filter { !($0.isHidden || $0.isFloating || $0.isSticky) }
-        var spaceDict = Dictionary(uniqueKeysWithValues: spaces.map { ($0.id, $0) })
+        let filteredWindows = windows.filter {
+            !($0.isHidden || $0.isFloating || $0.isSticky)
+        }
+        var spaceDict = Dictionary(
+            uniqueKeysWithValues: spaces.map { ($0.id, $0) })
         for window in filteredWindows {
             if var space = spaceDict[window.spaceId] {
                 space.windows.append(window)
@@ -74,19 +77,23 @@ class YabaiSpacesProvider: SpacesProvider, SwitchableSpacesProvider {
     func focusSpace(spaceId: String, needWindowFocus: Bool) {
         _ = runYabaiCommand(arguments: ["-m", "space", "--focus", spaceId])
         if !needWindowFocus { return }
-        
-        DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 0.1) {
+
+        DispatchQueue.global(qos: .userInitiated).asyncAfter(
+            deadline: .now() + 0.1
+        ) {
             if let spaces = self.getSpacesWithWindows() {
                 if let space = spaces.first(where: { $0.id == Int(spaceId) }) {
                     let hasFocused = space.windows.contains { $0.isFocused }
                     if !hasFocused, let firstWindow = space.windows.first {
-                        _ = self.runYabaiCommand(arguments: ["-m", "window", "--focus", String(firstWindow.id)])
+                        _ = self.runYabaiCommand(arguments: [
+                            "-m", "window", "--focus", String(firstWindow.id),
+                        ])
                     }
                 }
             }
         }
     }
-    
+
     func focusWindow(windowId: String) {
         _ = runYabaiCommand(arguments: ["-m", "window", "--focus", windowId])
     }
