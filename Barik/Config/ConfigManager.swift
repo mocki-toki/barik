@@ -85,6 +85,9 @@ final class ConfigManager: ObservableObject {
             calendar.show-events = true
             # calendar.allow-list = ["Home", "Personal"] # show only these calendars
             # calendar.deny-list = ["Work", "Boss"] # show all calendars except these
+
+            [popup.default.time]
+            view-variant = "box"
             """
         try defaultTOML.write(toFile: path, atomically: true, encoding: .utf8)
     }
@@ -107,6 +110,101 @@ final class ConfigManager: ObservableObject {
             }
         }
         fileWatchSource?.resume()
+    }
+
+    func updateConfigValue(key: String, newValue: String) {
+        guard let path = configFilePath else {
+            print("Config file path is not set")
+            return
+        }
+        do {
+            let currentText = try String(contentsOfFile: path, encoding: .utf8)
+            let updatedText = updatedTOMLString(original: currentText, key: key, newValue: newValue)
+            try updatedText.write(toFile: path, atomically: false, encoding: .utf8)
+            DispatchQueue.main.async {
+                self.parseConfigFile(at: path)
+            }
+        } catch {
+            print("Error updating config:", error)
+        }
+    }
+
+    private func updatedTOMLString(original: String, key: String, newValue: String) -> String {
+        if key.contains(".") {
+            let components = key.split(separator: ".").map(String.init)
+            guard components.count >= 2 else {
+                return original
+            }
+            
+            let tablePath = components.dropLast().joined(separator: ".")
+            let actualKey = components.last!
+            
+            let tableHeader = "[\(tablePath)]"
+            let lines = original.components(separatedBy: "\n")
+            var newLines: [String] = []
+            var insideTargetTable = false
+            var updatedKey = false
+            var foundTable = false
+            
+            for line in lines {
+                let trimmed = line.trimmingCharacters(in: .whitespaces)
+                if trimmed.hasPrefix("[") && trimmed.hasSuffix("]") {
+                    if insideTargetTable && !updatedKey {
+                        newLines.append("\(actualKey) = \"\(newValue)\"")
+                        updatedKey = true
+                    }
+                    if trimmed == tableHeader {
+                        foundTable = true
+                        insideTargetTable = true
+                    } else {
+                        insideTargetTable = false
+                    }
+                    newLines.append(line)
+                } else {
+                    if insideTargetTable && !updatedKey {
+                        let pattern = "^\(NSRegularExpression.escapedPattern(for: actualKey))\\s*="
+                        if line.range(of: pattern, options: .regularExpression) != nil {
+                            newLines.append("\(actualKey) = \"\(newValue)\"")
+                            updatedKey = true
+                            continue
+                        }
+                    }
+                    newLines.append(line)
+                }
+            }
+
+            if foundTable && insideTargetTable && !updatedKey {
+                newLines.append("\(actualKey) = \"\(newValue)\"")
+            }
+
+            if !foundTable {
+                newLines.append("")
+                newLines.append("[\(tablePath)]")
+                newLines.append("\(actualKey) = \"\(newValue)\"")
+            }
+            return newLines.joined(separator: "\n")
+        } else {
+            let lines = original.components(separatedBy: "\n")
+            var newLines: [String] = []
+            var updatedAtLeastOnce = false
+            
+            for line in lines {
+                let trimmed = line.trimmingCharacters(in: .whitespaces)
+                if !trimmed.hasPrefix("#") {
+                    let pattern = "^\(NSRegularExpression.escapedPattern(for: key))\\s*="
+                    if line.range(of: pattern, options: .regularExpression) != nil {
+                        newLines.append("\(key) = \"\(newValue)\"")
+                        updatedAtLeastOnce = true
+                        continue
+                    }
+                }
+                newLines.append(line)
+            }
+            if !updatedAtLeastOnce {
+                newLines.append("\(key) = \"\(newValue)\"")
+            }
+            return newLines.joined(separator: "\n")
+        }
     }
 
     func globalWidgetConfig(for widgetId: String) -> ConfigData {

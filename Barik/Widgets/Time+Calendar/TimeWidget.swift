@@ -17,7 +17,9 @@ struct TimeWidget: View {
     }
 
     @State private var currentTime = Date()
-    @StateObject var calendarManager: CalendarManager
+    let calendarManager: CalendarManager
+
+    @State private var rect = CGRect()
 
     private let timer = Timer.publish(every: 1, on: .main, in: .common)
         .autoconnect()
@@ -26,18 +28,42 @@ struct TimeWidget: View {
         VStack(alignment: .trailing, spacing: 0) {
             Text(formattedTime(pattern: format, from: currentTime))
                 .fontWeight(.semibold)
-            if let event = calendarManager.nextEvent, calendarShowEvents {
+            if let event = calendarManager.nextEvent {
                 Text(eventText(for: event))
                     .opacity(0.8)
                     .font(.subheadline)
             }
         }
+        .font(.headline)
+        .foregroundStyle(.foregroundOutside)
         .shadow(color: .foregroundShadowOutside, radius: 3)
         .onReceive(timer) { date in
             currentTime = date
         }
+        .background(
+            GeometryReader { geometry in
+                Color.clear
+                    .onAppear {
+                        rect = geometry.frame(in: .global)
+                    }
+                    .onChange(of: geometry.frame(in: .global)) {
+                        oldState, newState in
+                        rect = newState
+                    }
+            }
+        )
+        .frame(maxHeight: .infinity)
+        .background(.black.opacity(0.001))
+        .onTapGesture {
+            MenuBarPopup.show(rect: rect, id: "calendar") {
+                CalendarPopup(
+                    calendarManager: calendarManager,
+                    configProvider: configProvider)
+            }
+        }
     }
 
+    // Format the current time.
     private func formattedTime(pattern: String, from time: Date) -> String {
         let formatter = DateFormatter()
         formatter.setLocalizedDateFormatFromTemplate(pattern)
@@ -68,12 +94,12 @@ struct TimeWidget: View {
 
 struct TimeWidget_Previews: PreviewProvider {
     static var previews: some View {
-        let configProvider = ConfigProvider(config: [:])
+        let provider = ConfigProvider(config: ConfigData())
+        let manager = CalendarManager(configProvider: provider)
+
         ZStack {
-            TimeWidget(
-                calendarManager: CalendarManager(configProvider: configProvider)
-            )
-            .environmentObject(ConfigProvider(config: [:]))
+            TimeWidget(calendarManager: manager)
+                .environmentObject(provider)
         }.frame(width: 500, height: 100)
     }
 }
