@@ -1,5 +1,5 @@
-import SwiftUI
 import AppKit
+import SwiftUI
 
 struct BlueButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
@@ -7,18 +7,20 @@ struct BlueButtonStyle: ButtonStyle {
             .foregroundColor(.white)
             .padding(.vertical, 5)
             .padding(.horizontal, 10)
-            .background(configuration.isPressed ? Color.blue.opacity(0.7) : Color.blue)
+            .background(
+                configuration.isPressed ? Color.blue.opacity(0.7) : Color.blue
+            )
             .clipShape(.capsule)
     }
 }
 
 struct SystemBannerWidget: View {
     let withLeftPadding: Bool
-    
+
     init(withLeftPadding: Bool = false) {
         self.withLeftPadding = withLeftPadding
     }
-    
+
     var body: some View {
         HStack(spacing: 15) {
             if withLeftPadding {

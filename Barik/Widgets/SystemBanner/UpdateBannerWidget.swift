@@ -94,7 +94,6 @@ struct UpdateBannerWidget: View {
     }
 }
 
-
 struct UpdateBannerWidget_Previews: PreviewProvider {
     static var previews: some View {
         UpdateBannerWidget()

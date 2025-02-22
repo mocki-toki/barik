@@ -1,7 +1,7 @@
-import SwiftUI
-import Network
-import CoreWLAN
 import CoreLocation
+import CoreWLAN
+import Network
+import SwiftUI
 
 enum NetworkState: String {
     case connected = "Connected"
@@ -20,18 +20,20 @@ enum WifiSignalStrength: String {
 }
 
 /// Unified view model for monitoring network and Wi‑Fi status.
-final class NetworkStatusViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
-    
+final class NetworkStatusViewModel: NSObject, ObservableObject,
+    CLLocationManagerDelegate
+{
+
     // States for Wi‑Fi and Ethernet obtained via NWPathMonitor.
     @Published var wifiState: NetworkState = .disconnected
     @Published var ethernetState: NetworkState = .disconnected
-    
+
     // Wi‑Fi details obtained via CoreWLAN.
     @Published var ssid: String = "Not connected"
     @Published var rssi: Int = 0
     @Published var noise: Int = 0
     @Published var channel: String = "N/A"
-    
+
     /// Computed property for signal strength.
     var wifiSignalStrength: WifiSignalStrength {
         // If Wi‑Fi is not connected or the interface is missing – return unknown.
@@ -46,13 +48,13 @@ final class NetworkStatusViewModel: NSObject, ObservableObject, CLLocationManage
             return .low
         }
     }
-    
+
     private let monitor = NWPathMonitor()
     private let monitorQueue = DispatchQueue(label: "NetworkMonitor")
-    
+
     private var timer: Timer?
     private let locationManager = CLLocationManager()
-    
+
     override init() {
         super.init()
         locationManager.delegate = self
@@ -60,20 +62,21 @@ final class NetworkStatusViewModel: NSObject, ObservableObject, CLLocationManage
         startNetworkMonitoring()
         startWiFiMonitoring()
     }
-    
+
     deinit {
         stopNetworkMonitoring()
         stopWiFiMonitoring()
     }
-    
+
     // MARK: — NWPathMonitor for overall network status.
-    
+
     private func startNetworkMonitoring() {
         monitor.pathUpdateHandler = { [weak self] path in
             guard let self = self else { return }
             DispatchQueue.main.async {
                 // Wi‑Fi
-                if path.availableInterfaces.contains(where: { $0.type == .wifi }) {
+                if path.availableInterfaces.contains(where: { $0.type == .wifi }
+                ) {
                     if path.usesInterfaceType(.wifi) {
                         switch path.status {
                         case .satisfied:
@@ -90,9 +93,11 @@ final class NetworkStatusViewModel: NSObject, ObservableObject, CLLocationManage
                 } else {
                     self.wifiState = .notSupported
                 }
-                
+
                 // Ethernet
-                if path.availableInterfaces.contains(where: { $0.type == .wiredEthernet }) {
+                if path.availableInterfaces.contains(where: {
+                    $0.type == .wiredEthernet
+                }) {
                     if path.usesInterfaceType(.wiredEthernet) {
                         switch path.status {
                         case .satisfied:
@@ -112,25 +117,26 @@ final class NetworkStatusViewModel: NSObject, ObservableObject, CLLocationManage
         }
         monitor.start(queue: monitorQueue)
     }
-    
+
     private func stopNetworkMonitoring() {
         monitor.cancel()
     }
-    
+
     // MARK: — Updating Wi‑Fi information via CoreWLAN.
-    
+
     private func startWiFiMonitoring() {
-        timer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) {
+            [weak self] _ in
             self?.updateWiFiInfo()
         }
         updateWiFiInfo()
     }
-    
+
     private func stopWiFiMonitoring() {
         timer?.invalidate()
         timer = nil
     }
-    
+
     private func updateWiFiInfo() {
         let client = CWWiFiClient.shared()
         if let interface = client.interface() {
@@ -163,10 +169,13 @@ final class NetworkStatusViewModel: NSObject, ObservableObject, CLLocationManage
             self.channel = "N/A"
         }
     }
-    
+
     // MARK: — CLLocationManagerDelegate.
-    
-    func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+
+    func locationManager(
+        _ manager: CLLocationManager,
+        didChangeAuthorization status: CLAuthorizationStatus
+    ) {
         updateWiFiInfo()
     }
 }

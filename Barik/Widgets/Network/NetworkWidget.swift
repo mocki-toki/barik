@@ -18,7 +18,9 @@ struct NetworkWidget: View {
             GeometryReader { geometry in
                 Color.clear
                     .onAppear { rect = geometry.frame(in: .global) }
-                    .onChange(of: geometry.frame(in: .global)) { _, newValue in rect = newValue }
+                    .onChange(of: geometry.frame(in: .global)) { _, newValue in
+                        rect = newValue
+                    }
             }
         )
         .contentShape(Rectangle())
@@ -29,7 +31,7 @@ struct NetworkWidget: View {
             MenuBarPopup.show(rect: rect, id: "network") { NetworkPopup() }
         }
     }
-    
+
     private var wifiIcon: some View {
         if viewModel.ssid == "Not connected" {
             return Image(systemName: "wifi.slash")
@@ -56,7 +58,7 @@ struct NetworkWidget: View {
                 .foregroundColor(.gray)
         }
     }
-    
+
     private var ethernetIcon: some View {
         switch viewModel.ethernetState {
         case .connected:

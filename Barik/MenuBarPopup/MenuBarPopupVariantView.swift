@@ -33,30 +33,39 @@ struct MenuBarPopupVariantView: View {
         let settingsView = settings()
 
         self.box = (boxView is EmptyView) ? nil : AnyView(boxView)
-        self.vertical = (verticalView is EmptyView) ? nil : AnyView(verticalView)
-        self.horizontal = (horizontalView is EmptyView) ? nil : AnyView(horizontalView)
-        self.settings = (settingsView is EmptyView) ? nil : AnyView(settingsView)
+        self.vertical =
+            (verticalView is EmptyView) ? nil : AnyView(verticalView)
+        self.horizontal =
+            (horizontalView is EmptyView) ? nil : AnyView(horizontalView)
+        self.settings =
+            (settingsView is EmptyView) ? nil : AnyView(settingsView)
     }
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-                content(for: selectedVariant)
-                    .blur(radius: animationValue * 30)
-                    .transition(.opacity)
+            content(for: selectedVariant)
+                .blur(radius: animationValue * 30)
+                .transition(.opacity)
         }
         .overlay(alignment: .bottomTrailing) {
             HStack(spacing: 3) {
                 if box != nil {
-                    variantButton(variant: .box, systemImageName: "square.inset.filled")
+                    variantButton(
+                        variant: .box, systemImageName: "square.inset.filled")
                 }
                 if vertical != nil {
-                    variantButton(variant: .vertical, systemImageName: "rectangle.portrait.inset.filled")
+                    variantButton(
+                        variant: .vertical,
+                        systemImageName: "rectangle.portrait.inset.filled")
                 }
                 if horizontal != nil {
-                    variantButton(variant: .horizontal, systemImageName: "rectangle.inset.filled")
+                    variantButton(
+                        variant: .horizontal,
+                        systemImageName: "rectangle.inset.filled")
                 }
                 if settings != nil {
-                    variantButton(variant: .settings, systemImageName: "gearshape.fill")
+                    variantButton(
+                        variant: .settings, systemImageName: "gearshape.fill")
                 }
             }
             .padding(.horizontal, 20)
@@ -98,7 +107,7 @@ struct MenuBarPopupVariantView: View {
                         onVariantSelected?(variant)
                     }
                 }
-                
+
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     withAnimation(.smooth(duration: 0.3)) {
                         animationValue = 0
@@ -127,11 +136,11 @@ private struct HoverButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         HoverButton(configuration: configuration)
     }
-    
+
     struct HoverButton: View {
         let configuration: Configuration
         @State private var isHovered = false
-        
+
         var body: some View {
             configuration.label
                 .padding(8)

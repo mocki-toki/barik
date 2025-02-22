@@ -3,7 +3,7 @@ import SwiftUI
 /// Window displaying detailed network status information.
 struct NetworkPopup: View {
     @StateObject private var viewModel = NetworkStatusViewModel()
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             if viewModel.wifiState != .notSupported {
@@ -14,9 +14,13 @@ struct NetworkPopup: View {
                         .font(.headline)
                 }
 
-                if viewModel.ssid != "Not connected" && viewModel.ssid != "No interface" {
+                if viewModel.ssid != "Not connected"
+                    && viewModel.ssid != "No interface"
+                {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Signal strength: \(viewModel.wifiSignalStrength.rawValue)")
+                        Text(
+                            "Signal strength: \(viewModel.wifiSignalStrength.rawValue)"
+                        )
                         Text("RSSI: \(viewModel.rssi)")
                         Text("Noise: \(viewModel.noise)")
                         Text("Channel: \(viewModel.channel)")
@@ -24,7 +28,7 @@ struct NetworkPopup: View {
                     .font(.subheadline)
                 }
             }
-            
+
             // Ethernet section
             if viewModel.ethernetState != .notSupported {
                 HStack(spacing: 8) {
@@ -38,7 +42,7 @@ struct NetworkPopup: View {
         .padding(30)
         .background(Color.black)
     }
-    
+
     /// Chooses the Wi‑Fi icon based on the status and connection availability.
     private var wifiIcon: some View {
         if viewModel.ssid == "Not connected" {
@@ -72,7 +76,7 @@ struct NetworkPopup: View {
                 .padding(8)
                 .background(Color.gray.opacity(0.8))
                 .clipShape(Circle())
-                    .foregroundStyle(.white)
+                .foregroundStyle(.white)
         case .disabled:
             return Image(systemName: "wifi.slash")
                 .padding(8)
@@ -87,7 +91,7 @@ struct NetworkPopup: View {
                 .foregroundStyle(.white)
         }
     }
-    
+
     private var ethernetIcon: some View {
         switch viewModel.ethernetState {
         case .connected:
