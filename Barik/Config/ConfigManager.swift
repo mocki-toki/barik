@@ -71,6 +71,7 @@ final class ConfigManager: ObservableObject {
 
             [widgets.default.spaces]
             space.show-key = true        # show space number (or character, if you use AeroSpace)
+            window.show-title = true
             window.title.max-length = 50
 
             [widgets.default.battery]

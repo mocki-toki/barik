@@ -78,6 +78,7 @@ private struct WindowView: View {
     }
 
     var maxLength: Int { titleConfig["max-length"]?.intValue ?? 50 }
+    var showTitle: Bool { windowConfig["show-title"]?.boolValue ?? true }
 
     let window: AnyWindow
     let space: AnySpace
@@ -110,7 +111,7 @@ private struct WindowView: View {
             .opacity(spaceIsFocused && !window.isFocused ? 0.5 : 1)
             .transition(.blurReplace)
 
-            if window.isFocused, !title.isEmpty {
+            if window.isFocused, !title.isEmpty, showTitle {
                 HStack {
                     Text(
                         title.count > titleMaxLength
@@ -126,7 +127,7 @@ private struct WindowView: View {
             }
         }
         .padding(.all, 2)
-        .background(isHovered ? .foreground.opacity(0.1) : .clear)
+        .background(isHovered || (!showTitle && window.isFocused) ? .selected : .clear)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .animation(.smooth, value: isHovered)
         .frame(height: 30)
