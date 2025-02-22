@@ -103,17 +103,11 @@ Soon, you'll also be able to place widgets not just at the top, but at the botto
 
 And very soon, I'll introduce a new way to use barik — **Popup** ([#24](https://github.com/mocki-toki/barik/issues/24)). Stay tuned!
 
-## Why Aren't the Space Indicators Clickable?
-
-[#7](https://github.com/mocki-toki/barik/issues/7)
-
-The space indicators are not clickable because barik is designed to be keyboard-driven. Use keyboard shortcuts to switch spaces, for example with [skhd](https://github.com/koekeishiya/skhd) or [Raycast](https://www.raycast.com/) scripts.
-
 ## Where Are the Menu Items?
 
 [#5](https://github.com/mocki-toki/barik/issues/5), [#1](https://github.com/mocki-toki/barik/issues/1)
 
-Menu items are not supported. The original philosophy of barik is to minimize unnecessary information and emphasize keyboard-driven control. However, you can use [Raycast](https://www.raycast.com/), which supports menu items through an interface similar to Spotlight. I personally use it with the `option + tab` shortcut, and it works very well.
+Menu items (such as File, Edit, View, etc.) are not currently supported, but they are planned for future releases. However, you can use [Raycast](https://www.raycast.com/), which supports menu items through an interface similar to Spotlight. I personally use it with the `option + tab` shortcut, and it works very well.
 
 If you’re accustomed to using menu items from the system menu bar, simply move your mouse to the top of the screen to reveal the system menu bar, where they will be available.
 
