@@ -22,9 +22,9 @@ private struct SpaceView: View {
 
     var config: ConfigData { configProvider.config }
     var spaceConfig: ConfigData { config["space"]?.dictionaryValue ?? [:] }
-    
+
     var showKey: Bool { spaceConfig["show-key"]?.boolValue ?? true }
-    
+
     let space: AnySpace
 
     @State var isHovered = false
@@ -70,7 +70,7 @@ private struct SpaceView: View {
 private struct WindowView: View {
     @EnvironmentObject var configProvider: ConfigProvider
     @EnvironmentObject var viewModel: SpacesViewModel
-    
+
     var config: ConfigData { configProvider.config }
     var windowConfig: ConfigData { config["window"]?.dictionaryValue ?? [:] }
     var titleConfig: ConfigData {

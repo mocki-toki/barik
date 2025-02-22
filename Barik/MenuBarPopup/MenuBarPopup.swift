@@ -15,13 +15,19 @@ class HidingPanel: NSPanel, NSWindowDelegate {
         backing bufferingType: NSWindow.BackingStoreType,
         defer flag: Bool
     ) {
-        super.init(contentRect: contentRect, styleMask: style, backing: bufferingType, defer: flag)
+        super.init(
+            contentRect: contentRect, styleMask: style, backing: bufferingType,
+            defer: flag)
         self.delegate = self
     }
 
     func windowDidResignKey(_ notification: Notification) {
         NotificationCenter.default.post(name: .willHideWindow, object: nil)
-        hideTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(Constants.menuBarPopupAnimationDurationInMilliseconds) / 1000.0, repeats: false) { [weak self] _ in
+        hideTimer = Timer.scheduledTimer(
+            withTimeInterval: TimeInterval(
+                Constants.menuBarPopupAnimationDurationInMilliseconds) / 1000.0,
+            repeats: false
+        ) { [weak self] _ in
             self?.orderOut(nil)
         }
     }
@@ -34,28 +40,35 @@ class MenuBarPopup {
         rect: CGRect, id: String, @ViewBuilder content: @escaping () -> Content
     ) {
         guard let panel = panel else { return }
-        
+
         if panel.isKeyWindow, lastContentIdentifier == id {
             NotificationCenter.default.post(name: .willHideWindow, object: nil)
-            let duration = Double(Constants.menuBarPopupAnimationDurationInMilliseconds) / 1000.0
+            let duration =
+                Double(Constants.menuBarPopupAnimationDurationInMilliseconds)
+                / 1000.0
             DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
                 panel.orderOut(nil)
                 lastContentIdentifier = nil
             }
             return
         }
-        
-        let isContentChange = panel.isKeyWindow && (lastContentIdentifier != nil && lastContentIdentifier != id)
+
+        let isContentChange =
+            panel.isKeyWindow
+            && (lastContentIdentifier != nil && lastContentIdentifier != id)
         lastContentIdentifier = id
-        
+
         if let hidingPanel = panel as? HidingPanel {
             hidingPanel.hideTimer?.invalidate()
             hidingPanel.hideTimer = nil
         }
-        
+
         if panel.isKeyWindow {
-            NotificationCenter.default.post(name: .willChangeContent, object: nil)
-            let baseDuration = Double(Constants.menuBarPopupAnimationDurationInMilliseconds) / 1000.0
+            NotificationCenter.default.post(
+                name: .willChangeContent, object: nil)
+            let baseDuration =
+                Double(Constants.menuBarPopupAnimationDurationInMilliseconds)
+                / 1000.0
             let duration = isContentChange ? baseDuration / 2 : baseDuration
             DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
                 panel.contentView = NSHostingView(
@@ -67,11 +80,12 @@ class MenuBarPopup {
                             .position(x: rect.midX)
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .id(UUID()) 
+                        .id(UUID())
                 )
                 panel.makeKeyAndOrderFront(nil)
                 DispatchQueue.main.async {
-                    NotificationCenter.default.post(name: .willShowWindow, object: nil)
+                    NotificationCenter.default.post(
+                        name: .willShowWindow, object: nil)
                 }
             }
         } else {
@@ -87,7 +101,8 @@ class MenuBarPopup {
             )
             panel.makeKeyAndOrderFront(nil)
             DispatchQueue.main.async {
-                NotificationCenter.default.post(name: .willShowWindow, object: nil)
+                NotificationCenter.default.post(
+                    name: .willShowWindow, object: nil)
             }
         }
     }
@@ -108,7 +123,8 @@ class MenuBarPopup {
             defer: false
         )
 
-        newPanel.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.floatingWindow)))
+        newPanel.level = NSWindow.Level(
+            rawValue: Int(CGWindowLevelForKey(.floatingWindow)))
         newPanel.backgroundColor = .clear
         newPanel.hasShadow = false
         newPanel.collectionBehavior = [.canJoinAllSpaces]

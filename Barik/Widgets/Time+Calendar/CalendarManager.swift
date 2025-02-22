@@ -8,12 +8,14 @@ class CalendarManager: ObservableObject {
         configProvider.config["calendar"]?.dictionaryValue
     }
     var allowList: [String] {
-        Array((config?["allow-list"]?.arrayValue?.map { $0.stringValue ?? "" }
-            .drop(while: { $0 == "" })) ?? [])
+        Array(
+            (config?["allow-list"]?.arrayValue?.map { $0.stringValue ?? "" }
+                .drop(while: { $0 == "" })) ?? [])
     }
     var denyList: [String] {
-        Array((config?["deny-list"]?.arrayValue?.map { $0.stringValue ?? "" }
-            .drop(while: { $0 == "" })) ?? [])
+        Array(
+            (config?["deny-list"]?.arrayValue?.map { $0.stringValue ?? "" }
+                .drop(while: { $0 == "" })) ?? [])
     }
 
     @Published var nextEvent: EKEvent?
@@ -33,7 +35,8 @@ class CalendarManager: ObservableObject {
     }
 
     private func startMonitoring() {
-        timer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) {
+            [weak self] _ in
             self?.fetchTodaysEvents()
             self?.fetchTomorrowsEvents()
             self?.fetchNextEvent()
@@ -55,7 +58,8 @@ class CalendarManager: ObservableObject {
                 self?.fetchTomorrowsEvents()
                 self?.fetchNextEvent()
             } else {
-                print("Calendar access not granted: \(String(describing: error))")
+                print(
+                    "Calendar access not granted: \(String(describing: error))")
             }
         }
     }
@@ -75,12 +79,18 @@ class CalendarManager: ObservableObject {
         let calendars = eventStore.calendars(for: .event)
         let now = Date()
         let calendar = Calendar.current
-        guard let endOfDay = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: now) else {
+        guard
+            let endOfDay = calendar.date(
+                bySettingHour: 23, minute: 59, second: 59, of: now)
+        else {
             print("Failed to get end of day.")
             return
         }
-        let predicate = eventStore.predicateForEvents(withStart: now, end: endOfDay, calendars: calendars)
-        let events = eventStore.events(matching: predicate).sorted { $0.startDate < $1.startDate }
+        let predicate = eventStore.predicateForEvents(
+            withStart: now, end: endOfDay, calendars: calendars)
+        let events = eventStore.events(matching: predicate).sorted {
+            $0.startDate < $1.startDate
+        }
         let filteredEvents = filterEvents(events)
         let regularEvents = filteredEvents.filter { !$0.isAllDay }
         let next = regularEvents.first ?? filteredEvents.first
@@ -94,11 +104,15 @@ class CalendarManager: ObservableObject {
         let now = Date()
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: now)
-        guard let endOfDay = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: now) else {
+        guard
+            let endOfDay = calendar.date(
+                bySettingHour: 23, minute: 59, second: 59, of: now)
+        else {
             print("Failed to get end of day.")
             return
         }
-        let predicate = eventStore.predicateForEvents(withStart: startOfDay, end: endOfDay, calendars: calendars)
+        let predicate = eventStore.predicateForEvents(
+            withStart: startOfDay, end: endOfDay, calendars: calendars)
         let events = eventStore.events(matching: predicate)
             .filter { $0.endDate >= now }
             .sorted { $0.startDate < $1.startDate }
@@ -113,14 +127,21 @@ class CalendarManager: ObservableObject {
         let now = Date()
         let calendar = Calendar.current
         let startOfToday = calendar.startOfDay(for: now)
-        guard let startOfTomorrow = calendar.date(byAdding: .day, value: 1, to: startOfToday),
-              let endOfTomorrow = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: startOfTomorrow)
+        guard
+            let startOfTomorrow = calendar.date(
+                byAdding: .day, value: 1, to: startOfToday),
+            let endOfTomorrow = calendar.date(
+                bySettingHour: 23, minute: 59, second: 59, of: startOfTomorrow)
         else {
             print("Failed to get tomorrow's date range.")
             return
         }
-        let predicate = eventStore.predicateForEvents(withStart: startOfTomorrow, end: endOfTomorrow, calendars: calendars)
-        let events = eventStore.events(matching: predicate).sorted { $0.startDate < $1.startDate }
+        let predicate = eventStore.predicateForEvents(
+            withStart: startOfTomorrow, end: endOfTomorrow, calendars: calendars
+        )
+        let events = eventStore.events(matching: predicate).sorted {
+            $0.startDate < $1.startDate
+        }
         let filteredEvents = filterEvents(events)
         DispatchQueue.main.async {
             self.tomorrowsEvents = filteredEvents

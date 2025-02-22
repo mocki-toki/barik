@@ -119,8 +119,10 @@ final class ConfigManager: ObservableObject {
         }
         do {
             let currentText = try String(contentsOfFile: path, encoding: .utf8)
-            let updatedText = updatedTOMLString(original: currentText, key: key, newValue: newValue)
-            try updatedText.write(toFile: path, atomically: false, encoding: .utf8)
+            let updatedText = updatedTOMLString(
+                original: currentText, key: key, newValue: newValue)
+            try updatedText.write(
+                toFile: path, atomically: false, encoding: .utf8)
             DispatchQueue.main.async {
                 self.parseConfigFile(at: path)
             }
@@ -129,23 +131,25 @@ final class ConfigManager: ObservableObject {
         }
     }
 
-    private func updatedTOMLString(original: String, key: String, newValue: String) -> String {
+    private func updatedTOMLString(
+        original: String, key: String, newValue: String
+    ) -> String {
         if key.contains(".") {
             let components = key.split(separator: ".").map(String.init)
             guard components.count >= 2 else {
                 return original
             }
-            
+
             let tablePath = components.dropLast().joined(separator: ".")
             let actualKey = components.last!
-            
+
             let tableHeader = "[\(tablePath)]"
             let lines = original.components(separatedBy: "\n")
             var newLines: [String] = []
             var insideTargetTable = false
             var updatedKey = false
             var foundTable = false
-            
+
             for line in lines {
                 let trimmed = line.trimmingCharacters(in: .whitespaces)
                 if trimmed.hasPrefix("[") && trimmed.hasSuffix("]") {
@@ -162,8 +166,11 @@ final class ConfigManager: ObservableObject {
                     newLines.append(line)
                 } else {
                     if insideTargetTable && !updatedKey {
-                        let pattern = "^\(NSRegularExpression.escapedPattern(for: actualKey))\\s*="
-                        if line.range(of: pattern, options: .regularExpression) != nil {
+                        let pattern =
+                            "^\(NSRegularExpression.escapedPattern(for: actualKey))\\s*="
+                        if line.range(of: pattern, options: .regularExpression)
+                            != nil
+                        {
                             newLines.append("\(actualKey) = \"\(newValue)\"")
                             updatedKey = true
                             continue
@@ -187,12 +194,15 @@ final class ConfigManager: ObservableObject {
             let lines = original.components(separatedBy: "\n")
             var newLines: [String] = []
             var updatedAtLeastOnce = false
-            
+
             for line in lines {
                 let trimmed = line.trimmingCharacters(in: .whitespaces)
                 if !trimmed.hasPrefix("#") {
-                    let pattern = "^\(NSRegularExpression.escapedPattern(for: key))\\s*="
-                    if line.range(of: pattern, options: .regularExpression) != nil {
+                    let pattern =
+                        "^\(NSRegularExpression.escapedPattern(for: key))\\s*="
+                    if line.range(of: pattern, options: .regularExpression)
+                        != nil
+                    {
                         newLines.append("\(key) = \"\(newValue)\"")
                         updatedAtLeastOnce = true
                         continue

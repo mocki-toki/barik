@@ -23,7 +23,7 @@ struct MenuBarView: View {
                     buildView(for: item)
                 }
             }
-            
+
             if !items.contains(where: { $0.id == "system-banner" }) {
                 SystemBannerWidget(withLeftPadding: true)
             }
@@ -62,7 +62,7 @@ struct MenuBarView: View {
                 .fill(Color.active)
                 .frame(width: 2, height: 15)
                 .clipShape(Capsule())
-            
+
         case "system-banner":
             SystemBannerWidget()
 

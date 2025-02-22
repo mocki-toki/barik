@@ -12,12 +12,21 @@ class AppUpdater: ObservableObject {
     }
 
     func checkForUpdate() {
-        guard let url = URL(string: "https://api.github.com/repos/mocki-toki/barik/releases/latest") else { return }
+        guard
+            let url = URL(
+                string:
+                    "https://api.github.com/repos/mocki-toki/barik/releases/latest"
+            )
+        else { return }
         URLSession.shared.dataTask(with: url) { data, _, _ in
             guard let data = data,
-                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let tag = json["tag_name"] as? String else { return }
-            let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0"
+                let json = try? JSONSerialization.jsonObject(with: data)
+                    as? [String: Any],
+                let tag = json["tag_name"] as? String
+            else { return }
+            let currentVersion =
+                Bundle.main.infoDictionary?["CFBundleShortVersionString"]
+                as? String ?? "0.0.0"
             if self.compareVersion(tag, currentVersion) > 0 {
                 DispatchQueue.main.async {
                     self.latestVersion = tag

@@ -278,8 +278,8 @@ private struct EventListView: View {
     var body: some View {
         if todaysEvents.isEmpty && tomorrowsEvents.isEmpty {
             Text(NSLocalizedString("EMPTY_EVENTS", comment: ""))
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .font(.callout)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .font(.callout)
         } else {
             VStack(spacing: 10) {
                 eventSection(
