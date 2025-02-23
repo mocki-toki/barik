@@ -12,29 +12,52 @@ struct BatteryWidget: View {
     private var isCharging: Bool { batteryManager.isCharging }
     private var isPluggedIn: Bool { batteryManager.isPluggedIn }
 
+    @State private var rect: CGRect = CGRect()
+
     var body: some View {
-        ZStack(alignment: .leading) {
-            BatteryBodyView(mask: false)
-                .opacity(showPercentage ? 0.3 : 0.4)
-            BatteryBodyView(mask: true)
-                .clipShape(
-                    Rectangle().path(
-                        in: CGRect(
-                            x: showPercentage ? 0 : 2,
-                            y: 0,
-                            width: 30 * Int(level)
-                                / (showPercentage ? 110 : 130),
-                            height: .bitWidth
+        ZStack {
+            ZStack(alignment: .leading) {
+                BatteryBodyView(mask: false)
+                    .opacity(showPercentage ? 0.3 : 0.4)
+                BatteryBodyView(mask: true)
+                    .clipShape(
+                        Rectangle().path(
+                            in: CGRect(
+                                x: showPercentage ? 0 : 2,
+                                y: 0,
+                                width: 30 * Int(level)
+                                    / (showPercentage ? 110 : 130),
+                                height: .bitWidth
+                            )
                         )
                     )
+                    .foregroundStyle(batteryColor)
+                BatteryText(
+                    level: level, isCharging: isCharging,
+                    isPluggedIn: isPluggedIn
                 )
-                .foregroundStyle(batteryColor)
-            BatteryText(
-                level: level, isCharging: isCharging, isPluggedIn: isPluggedIn
+                .foregroundStyle(batteryTextColor)
+            }
+            .frame(width: 30, height: 10)
+            .background(
+                GeometryReader { geometry in
+                    Color.clear
+                        .onAppear {
+                            rect = geometry.frame(in: .global)
+                        }
+                        .onChange(of: geometry.frame(in: .global)) {
+                            oldState, newState in
+                            rect = newState
+                        }
+                }
             )
-            .foregroundStyle(batteryTextColor)
         }
-        .frame(width: 30, height: 10)
+        .frame(maxHeight: .infinity)
+        .background(.black.opacity(0.001))
+        .onTapGesture {
+            MenuBarPopup.show(rect: rect, id: "battery") { BatteryPopup() }
+        }
+
     }
 
     private var batteryTextColor: Color {

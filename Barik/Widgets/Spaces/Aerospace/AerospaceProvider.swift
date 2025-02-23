@@ -1,6 +1,6 @@
 import Foundation
 
-class AerospaceSpacesProvider: SpacesProvider {
+class AerospaceSpacesProvider: SpacesProvider, SwitchableSpacesProvider {
     typealias SpaceType = AeroSpace
 
     func getSpacesWithWindows() -> [AeroSpace]? {
@@ -39,6 +39,14 @@ class AerospaceSpacesProvider: SpacesProvider {
         return resultSpaces.filter { !$0.windows.isEmpty }
     }
 
+    func focusSpace(spaceId: String, needWindowFocus: Bool) {
+        _ = runAerospaceCommand(arguments: ["workspace", spaceId])
+    }
+
+    func focusWindow(windowId: String) {
+        _ = runAerospaceCommand(arguments: ["focus", "--window-id", windowId])
+    }
+
     private func runAerospaceCommand(arguments: [String]) -> Data? {
         let process = Process()
         process.executableURL = URL(
@@ -67,8 +75,7 @@ class AerospaceSpacesProvider: SpacesProvider {
         }
         let decoder = JSONDecoder()
         do {
-            let spaces = try decoder.decode([AeroSpace].self, from: data)
-            return spaces
+            return try decoder.decode([AeroSpace].self, from: data)
         } catch {
             print("Decode spaces error: \(error)")
             return nil
@@ -86,8 +93,7 @@ class AerospaceSpacesProvider: SpacesProvider {
         }
         let decoder = JSONDecoder()
         do {
-            let windows = try decoder.decode([AeroWindow].self, from: data)
-            return windows
+            return try decoder.decode([AeroWindow].self, from: data)
         } catch {
             print("Decode windows error: \(error)")
             return nil
@@ -104,8 +110,7 @@ class AerospaceSpacesProvider: SpacesProvider {
         }
         let decoder = JSONDecoder()
         do {
-            let spaces = try decoder.decode([AeroSpace].self, from: data)
-            return spaces.first
+            return try decoder.decode([AeroSpace].self, from: data).first
         } catch {
             print("Decode focused space error: \(error)")
             return nil
@@ -122,8 +127,7 @@ class AerospaceSpacesProvider: SpacesProvider {
         }
         let decoder = JSONDecoder()
         do {
-            let windows = try decoder.decode([AeroWindow].self, from: data)
-            return windows.first
+            return try decoder.decode([AeroWindow].self, from: data).first
         } catch {
             print("Decode focused window error: \(error)")
             return nil
