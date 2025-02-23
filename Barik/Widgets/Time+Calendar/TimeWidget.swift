@@ -28,7 +28,7 @@ struct TimeWidget: View {
         VStack(alignment: .trailing, spacing: 0) {
             Text(formattedTime(pattern: format, from: currentTime))
                 .fontWeight(.semibold)
-            if let event = calendarManager.nextEvent {
+            if let event = calendarManager.nextEvent, calendarShowEvents {
                 Text(eventText(for: event))
                     .opacity(0.8)
                     .font(.subheadline)
