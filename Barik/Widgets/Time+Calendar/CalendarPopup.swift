@@ -17,7 +17,7 @@ struct CalendarPopup: View {
                     newValue: variant.rawValue
                 )
             },
-            box: { CalendarBoxPopup(calendarManager) },
+            box: { CalendarBoxPopup() },
             vertical: { CalendarVerticalPopup(calendarManager) },
             horizontal: { CalendarHorizontalPopup(calendarManager) }
         )
@@ -43,12 +43,6 @@ struct CalendarPopup: View {
 }
 
 struct CalendarBoxPopup: View {
-    let calendarManager: CalendarManager
-
-    init(_ calendarManager: CalendarManager) {
-        self.calendarManager = calendarManager
-    }
-
     var body: some View {
         VStack(spacing: 0) {
             Text(currentMonthYear)
@@ -252,7 +246,7 @@ private struct CalendarDaysView: View {
                     }
                 }
             }
-        }
+        }.compositingGroup()
     }
 
     func isToday(day: Int) -> Bool {
@@ -294,12 +288,14 @@ private struct EventListView: View {
 
     @ViewBuilder
     func eventSection(title: String, events: [EKEvent]) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.subheadline)
-                .foregroundStyle(.gray)
-            ForEach(events, id: \.eventIdentifier) { event in
-                EventRow(event: event)
+        if !events.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(title)
+                    .font(.subheadline)
+                    .foregroundStyle(.gray)
+                ForEach(events, id: \.eventIdentifier) { event in
+                    EventRow(event: event)
+                }
             }
         }
     }
@@ -335,13 +331,13 @@ private struct EventRow: View {
     }
 
     func getEventTime(_ event: EKEvent) -> String {
-        var text = event.title ?? ""
+        var text = ""
         if !event.isAllDay {
-            text += " ("
             let formatter = DateFormatter()
             formatter.setLocalizedDateFormatFromTemplate("j:mm")
-            text += formatter.string(from: event.startDate)
-            text += ")"
+            text += formatter.string(from: event.startDate).replacing(":00", with: "")
+            text += " — "
+            text += formatter.string(from: event.endDate).replacing(":00", with: "")
         } else {
             return NSLocalizedString("ALL_DAY", comment: "")
         }
@@ -361,7 +357,7 @@ struct CalendarPopup_Previews: PreviewProvider {
         let configProvider = ConfigProvider(config: ConfigData())
         let calendarManager = CalendarManager(configProvider: configProvider)
 
-        CalendarBoxPopup(calendarManager)
+        CalendarBoxPopup()
             .background(Color.black)
             .previewLayout(.sizeThatFits)
             .previewDisplayName("Box")
