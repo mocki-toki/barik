@@ -67,6 +67,7 @@ theme = "system" # system, light, dark
 displayed = [ # widgets on menu bar
     "default.spaces",
     "spacer",
+    "default.nowplaying",
     "default.network",
     "default.battery",
     "divider",
@@ -78,6 +79,13 @@ displayed = [ # widgets on menu bar
 space.show-key = true        # show space number (or character, if you use AeroSpace)
 window.show-title = true
 window.title.max-length = 50
+
+# A list of applications that will always be displayed by application name.
+# Other applications will show the window title if there is more than one window.
+window.title.always-display-app-name-for = ["Mail", "Chrome", "Arc"]
+
+[widgets.default.nowplaying.popup]
+view-variant = "horizontal"
 
 [widgets.default.battery]
 show-percentage = true
@@ -91,6 +99,9 @@ calendar.format = "J:mm"
 calendar.show-events = true
 # calendar.allow-list = ["Home", "Personal"] # show only these calendars
 # calendar.deny-list = ["Work", "Boss"] # show all calendars except these
+
+[widgets.default.time.popup]
+view-variant = "box"
 ```
 
 Currently, you can customize the order of widgets (time, indicators, etc.) and adjust some of their settings. Soon, you’ll also be able to add custom widgets and completely change **barik**'s appearance—making it almost unrecognizable (hello, r/unixporn!).
