@@ -1,4 +1,4 @@
-import SwiftUICore
+import SwiftUI
 
 struct SpacesWidget: View {
     @StateObject var viewModel = SpacesViewModel()
@@ -30,7 +30,7 @@ private struct SpaceView: View {
     @State var isHovered = false
 
     var body: some View {
-        let isFocused = space.windows.contains { $0.isFocused }
+        let isFocused = space.windows.contains { $0.isFocused } || space.isFocused
         HStack(spacing: 0) {
             Spacer().frame(width: 10)
             if showKey {
@@ -77,8 +77,9 @@ private struct WindowView: View {
         windowConfig["title"]?.dictionaryValue ?? [:]
     }
 
-    var maxLength: Int { titleConfig["max-length"]?.intValue ?? 50 }
     var showTitle: Bool { windowConfig["show-title"]?.boolValue ?? true }
+    var maxLength: Int { titleConfig["max-length"]?.intValue ?? 50 }
+    var alwaysDisplayAppTitleFor: [String] { titleConfig["always-display-app-name-for"]?.arrayValue?.filter({ $0.stringValue != nil }).map { $0.stringValue! } ?? [] }
 
     let window: AnyWindow
     let space: AnySpace
@@ -90,7 +91,7 @@ private struct WindowView: View {
         let size: CGFloat = 21
         let sameAppCount = space.windows.filter { $0.appName == window.appName }
             .count
-        let title = sameAppCount > 1 ? window.title : (window.appName ?? "")
+        let title = sameAppCount > 1 && !alwaysDisplayAppTitleFor.contains { $0 == window.appName } ? window.title : (window.appName ?? "")
         let spaceIsFocused = space.windows.contains { $0.isFocused }
         HStack {
             ZStack {
