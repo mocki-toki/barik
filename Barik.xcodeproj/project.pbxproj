@@ -302,6 +302,7 @@
 				INFOPLIST_FILE = Barik/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Barik;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "We need this permission for control of third-party media players via an interactive widget";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "We need this permission for displaying calendar events";
 				INFOPLIST_KEY_NSHumanReadableCopyright = Pansy;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app uses location permission for display WiFi network name";
@@ -335,6 +336,7 @@
 				INFOPLIST_FILE = Barik/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Barik;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "We need this permission for control of third-party media players via an interactive widget";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "We need this permission for displaying calendar events";
 				INFOPLIST_KEY_NSHumanReadableCopyright = Pansy;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app uses location permission for display WiFi network name";

@@ -32,6 +32,7 @@ struct MenuBarView: View {
         .frame(height: 55)
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 25)
+        .background(.black.opacity(0.001))
         .preferredColorScheme(theme)
     }
 
@@ -52,6 +53,10 @@ struct MenuBarView: View {
 
         case "default.time":
             TimeWidget(calendarManager: CalendarManager(configProvider: config))
+                .environmentObject(config)
+            
+        case "default.nowplaying":
+            NowPlayingWidget()
                 .environmentObject(config)
 
         case "spacer":
