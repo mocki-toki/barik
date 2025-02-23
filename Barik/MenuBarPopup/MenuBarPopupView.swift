@@ -108,6 +108,9 @@ struct MenuBarPopupView<Content: View>: View {
                 .animation(
                     .smooth(duration: 0.3), value: animated ? 0 : computedOffset
                 )
+                .animation(
+                    .smooth(duration: 0.3), value: animated ? 0 : computedYOffset
+                )
         }
         .background(
             GeometryReader { geometry in
