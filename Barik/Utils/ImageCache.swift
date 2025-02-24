@@ -227,18 +227,24 @@ struct FadeAnimatedCachedImage<Content: View>: View {
 // MARK: - Cached Image View
 
 /// A view that displays a cached image without animation.
-struct CachedImage: View {
+struct CachedImage<Content: View>: View {
     let url: URL?
     let targetSize: CGSize?
     
     @StateObject private var loader: ImageLoader
     @State private var displayedImage: NSImage?
+    let content: (Image) -> Content
     
     /// Initializes the view with a URL and optional target size.
-    init(url: URL?, targetSize: CGSize? = nil) {
+    init(
+        url: URL?,
+        targetSize: CGSize? = nil,
+        @ViewBuilder content: @escaping (Image) -> Content
+    ) {
         self.url = url
         self.targetSize = targetSize
         _loader = StateObject(wrappedValue: ImageLoader(url: url, targetSize: targetSize))
+        self.content = content
     }
     
     var body: some View {

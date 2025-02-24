@@ -6,7 +6,7 @@ struct MenuBarPopupView<Content: View>: View {
 
     @State private var contentHeight: CGFloat = 0
     @State private var viewFrame: CGRect = .zero
-    @State private var animationValue: Double = 0
+    @State private var animationValue: Double = 0.01
     private var animated: Bool { isShowAnimation || isHideAnimation }
     @State private var isShowAnimation = false
     @State private var isHideAnimation = false
@@ -72,7 +72,7 @@ struct MenuBarPopupView<Content: View>: View {
                                     .menuBarPopupAnimationDurationInMilliseconds
                             ) / 1000.0)
                     ) {
-                        animationValue = 0.0
+                        animationValue = 0.01
                     }
                     DispatchQueue.main.asyncAfter(
                         deadline: .now()
@@ -93,7 +93,7 @@ struct MenuBarPopupView<Content: View>: View {
                                     .menuBarPopupAnimationDurationInMilliseconds
                             ) / 1000.0)
                     ) {
-                        animationValue = 0.0
+                        animationValue = 0.01
                     }
                     DispatchQueue.main.asyncAfter(
                         deadline: .now()
