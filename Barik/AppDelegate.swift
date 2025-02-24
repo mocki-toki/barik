@@ -1,53 +1,69 @@
 import SwiftUI
 
-class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    private var backgroundPanel: NSPanel?
+    private var menuBarPanel: NSPanel?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Show "What's New" banner if the app version is outdated
+        if !VersionChecker.isLatestVersion() {
+            VersionChecker.updateVersionFile()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                NotificationCenter.default.post(
+                    name: Notification.Name("ShowWhatsNewBanner"), object: nil)
+            }
+        }
+
         MenuBarPopup.setup()
-        setupAndShowBackground()
-        setupAndShowMenuBar()
+        setupPanels()
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(screenParametersDidChange(_:)),
+            name: NSApplication.didChangeScreenParametersNotification,
+            object: nil)
     }
 
-    private func setupAndShowBackground() {
-        guard let screen = NSScreen.main?.frame else { return }
-        let panelFrame = NSRect(
-            x: 0, y: 0, width: screen.size.width, height: screen.size.height)
-
-        let panel = NSPanel(
-            contentRect: panelFrame,
-            styleMask: [.nonactivatingPanel],
-            backing: .buffered,
-            defer: false
-        )
-
-        panel.level = NSWindow.Level(
-            rawValue: Int(CGWindowLevelForKey(.desktopWindow)))
-        panel.backgroundColor = .clear
-        panel.hasShadow = false
-        panel.collectionBehavior = [.canJoinAllSpaces]
-        panel.contentView = NSHostingView(rootView: BackgroundView())
-
-        panel.orderFront(nil)
+    @objc private func screenParametersDidChange(_ notification: Notification) {
+        setupPanels()
     }
 
-    private func setupAndShowMenuBar() {
-        guard let screen = NSScreen.main?.frame else { return }
-        let panelFrame = NSRect(
-            x: 0, y: 0, width: screen.size.width, height: screen.size.height)
+    /// Configures and displays the background and menu bar panels.
+    private func setupPanels() {
+        guard let screenFrame = NSScreen.main?.frame else { return }
+        setupPanel(
+            &backgroundPanel,
+            frame: screenFrame,
+            level: Int(CGWindowLevelForKey(.desktopWindow)),
+            hostingRootView: AnyView(BackgroundView()))
+        setupPanel(
+            &menuBarPanel,
+            frame: screenFrame,
+            level: Int(CGWindowLevelForKey(.backstopMenu)),
+            hostingRootView: AnyView(MenuBarView()))
+    }
 
-        let panel = NSPanel(
-            contentRect: panelFrame,
+    /// Sets up an NSPanel with the provided parameters.
+    private func setupPanel(
+        _ panel: inout NSPanel?, frame: CGRect, level: Int,
+        hostingRootView: AnyView
+    ) {
+        if let existingPanel = panel {
+            existingPanel.setFrame(frame, display: true)
+            return
+        }
+
+        let newPanel = NSPanel(
+            contentRect: frame,
             styleMask: [.nonactivatingPanel],
             backing: .buffered,
-            defer: false
-        )
-
-        panel.level = NSWindow.Level(
-            rawValue: Int(CGWindowLevelForKey(.backstopMenu)))
-        panel.backgroundColor = .clear
-        panel.hasShadow = false
-        panel.collectionBehavior = [.canJoinAllSpaces]
-        panel.contentView = NSHostingView(rootView: MenuBarView())
-
-        panel.orderFront(nil)
+            defer: false)
+        newPanel.level = NSWindow.Level(rawValue: level)
+        newPanel.backgroundColor = .clear
+        newPanel.hasShadow = false
+        newPanel.collectionBehavior = [.canJoinAllSpaces]
+        newPanel.contentView = NSHostingView(rootView: hostingRootView)
+        newPanel.orderFront(nil)
+        panel = newPanel
     }
 }
