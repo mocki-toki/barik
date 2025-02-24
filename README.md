@@ -28,8 +28,11 @@
 <br>
 <div align="center">
   <h3>Video</h3>
-  <video src="https://github.com/user-attachments/assets/33cfd2c2-e961-4d04-8012-664db0113d4f" autoplay loop muted playsinline>
+  <video src="https://github.com/user-attachments/assets/33cfd2c2-e961-4d04-8012-664db0113d4f">
 </div>
+    
+https://github.com/user-attachments/assets/d3799e24-c077-4c6a-a7da-a1f2eee1a07f
+
 <br>
 
 ## Requirements
@@ -112,7 +115,11 @@ I'm not planning to stick to minimal functionality—exciting new features are c
 
 Soon, you'll also be able to place widgets not just at the top, but at the bottom, left, and right as well. This means you can replace not only the menu bar but also the Dock! 🚀
 
-And very soon, I'll introduce a new way to use barik — **Popup** ([#24](https://github.com/mocki-toki/barik/issues/24)). Stay tuned!
+## What to do if the currently playing song is not displayed in the Now Playing widget?
+
+Unfortunately, macOS does not support access to its API that allows music control. Fortunately, there is a workaround using Apple Script or a service API, but this requires additional work to integrate each service. Currently, the Now Playing widget supports the following services:
+
+Create an issue so we can add your favorite music service: https://github.com/mocki-toki/barik/issues/new
 
 ## Where Are the Menu Items?
 
