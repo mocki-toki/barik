@@ -39,7 +39,7 @@ struct ChangelogPopup: View {
         guard
             let url = URL(
                 string:
-                    "https://raw.githubusercontent.com/mocki-toki/barik/develop/CHANGELOG.md"
+                    "https://raw.githubusercontent.com/mocki-toki/barik/main/CHANGELOG.md"
             )
         else {
             return

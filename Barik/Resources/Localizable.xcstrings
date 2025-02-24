@@ -1252,7 +1252,6 @@
       }
     },
     "Updating" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
