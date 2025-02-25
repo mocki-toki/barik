@@ -2,10 +2,11 @@ import Foundation
 
 class YabaiSpacesProvider: SpacesProvider, SwitchableSpacesProvider {
     typealias SpaceType = YabaiSpace
+    let executablePath = ConfigManager.shared.config.yabai.path
 
     private func runYabaiCommand(arguments: [String]) -> Data? {
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/yabai")
+        process.executableURL = URL(fileURLWithPath: executablePath)
         process.arguments = arguments
         let pipe = Pipe()
         process.standardOutput = pipe

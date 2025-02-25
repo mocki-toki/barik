@@ -2,6 +2,7 @@ import Foundation
 
 class AerospaceSpacesProvider: SpacesProvider, SwitchableSpacesProvider {
     typealias SpaceType = AeroSpace
+    let executablePath = ConfigManager.shared.config.aerospace.path
 
     func getSpacesWithWindows() -> [AeroSpace]? {
         guard var spaces = fetchSpaces(), let windows = fetchWindows() else {
@@ -49,8 +50,7 @@ class AerospaceSpacesProvider: SpacesProvider, SwitchableSpacesProvider {
 
     private func runAerospaceCommand(arguments: [String]) -> Data? {
         let process = Process()
-        process.executableURL = URL(
-            fileURLWithPath: "/opt/homebrew/bin/aerospace")
+        process.executableURL = URL(fileURLWithPath: executablePath)
         process.arguments = arguments
         let pipe = Pipe()
         process.standardOutput = pipe
