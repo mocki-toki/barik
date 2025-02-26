@@ -13,9 +13,10 @@ struct BackgroundView: View {
             default:
                 .none
             }
-
+        
         Spacer()
             .background(.regularMaterial)
             .preferredColorScheme(theme)
+            .opacity(configManager.config.rootToml.background.enabled ? 1 : 0)
     }
 }
