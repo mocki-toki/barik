@@ -5,12 +5,14 @@ struct RootToml: Decodable {
     var yabai: YabaiConfig?
     var aerospace: AerospaceConfig?
     var widgets: WidgetsSection
+    var background: BackgroundConfig
 
     init() {
         self.theme = nil
         self.yabai = nil
         self.aerospace = nil
         self.widgets = WidgetsSection(displayed: [], others: [:])
+        self.background = BackgroundConfig(enabled: false, height: nil)
     }
 }
 
@@ -238,4 +240,9 @@ struct AerospaceConfig: Decodable {
             self.path = "/opt/homebrew/bin/aerospace"
         }
     }
+}
+
+struct BackgroundConfig: Decodable {
+    let enabled: Bool
+    let height: Int?
 }
