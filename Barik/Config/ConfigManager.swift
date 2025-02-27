@@ -6,6 +6,8 @@ final class ConfigManager: ObservableObject {
     static let shared = ConfigManager()
 
     @Published private(set) var config = Config()
+    @Published private(set) var initError: String?
+    
     private var fileWatchSource: DispatchSourceFileSystemObject?
     private var fileDescriptor: CInt = -1
     private var configFilePath: String?
@@ -29,6 +31,7 @@ final class ConfigManager: ObservableObject {
                 try createDefaultConfig(at: path1)
                 chosenPath = path1
             } catch {
+                initError = "Error creating default config: \(error.localizedDescription)"
                 print("Error when creating default config:", error)
                 return
             }
@@ -50,6 +53,7 @@ final class ConfigManager: ObservableObject {
                 self.config = Config(rootToml: rootToml)
             }
         } catch {
+            initError = "Error parsing TOML file: \(error.localizedDescription)"
             print("Error when parsing TOML file:", error)
         }
     }

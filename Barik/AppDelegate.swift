@@ -5,6 +5,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var menuBarPanel: NSPanel?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if let error = ConfigManager.shared.initError {
+            showFatalConfigError(message: error)
+            return
+        }
+        
         // Show "What's New" banner if the app version is outdated
         if !VersionChecker.isLatestVersion() {
             VersionChecker.updateVersionFile()
@@ -65,5 +70,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         newPanel.contentView = NSHostingView(rootView: hostingRootView)
         newPanel.orderFront(nil)
         panel = newPanel
+    }
+    
+    private func showFatalConfigError(message: String) {
+        let alert = NSAlert()
+        alert.messageText = "Configuration Error"
+        alert.informativeText = "\(message)\n\nPlease double check ~/.barik-config.toml and try again."
+        alert.alertStyle = .critical
+        alert.addButton(withTitle: "Quit")
+        
+        alert.runModal()
+        NSApplication.shared.terminate(nil)
     }
 }
