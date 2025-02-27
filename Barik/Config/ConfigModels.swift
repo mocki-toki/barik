@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 struct RootToml: Decodable {
     var theme: String?
@@ -244,5 +245,62 @@ struct AerospaceConfig: Decodable {
 
 struct BackgroundConfig: Decodable {
     let enabled: Bool
-    let height: Int?
+    let height: BackgroundHeight?
+    
+    enum CodingKeys: String, CodingKey {
+        case enabled
+        case height
+    }
+    
+    init(enabled: Bool, height: BackgroundHeight?) {
+        self.enabled = enabled
+        self.height = height
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        enabled = try container.decode(Bool.self, forKey: .enabled)
+        height = try container.decodeIfPresent(BackgroundHeight.self, forKey: .height)
+    }
+    
+    func resolveHeight() -> Float? {
+        guard let height = height else { return nil }
+        switch height {
+        case .menuBar:
+            return NSApplication.shared.mainMenu.map({ Float($0.menuBarHeight) }) ?? 0
+        case .float(let value):
+            return value
+        }
+    }
+}
+
+enum BackgroundHeight: Decodable {
+    case menuBar
+    case float(Float)
+    
+    init(from decoder: Decoder) throws {
+        if let floatValue = try? decoder.singleValueContainer().decode(Float.self) {
+            self = .float(floatValue)
+            return
+        }
+        
+        if let stringValue = try? decoder.singleValueContainer().decode(String.self) {
+            if stringValue == "menu-bar" {
+                self = .menuBar
+                return
+            }
+            throw DecodingError.dataCorruptedError(
+                in: try decoder.singleValueContainer(),
+                debugDescription: "Expected 'menu-bar' or a float value, but found \(stringValue)"
+            )
+        }
+        
+        throw DecodingError.typeMismatch(
+            BackgroundHeight.self,
+            DecodingError.Context(
+                codingPath: decoder.codingPath,
+                debugDescription: "Expected 'menu-bar' or a float value"
+            )
+        )
+    }
 }
