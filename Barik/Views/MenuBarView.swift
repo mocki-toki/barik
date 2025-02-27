@@ -29,7 +29,8 @@ struct MenuBarView: View {
             }
         }
         .foregroundStyle(Color.foregroundOutside)
-        .frame(height: configManager.config.rootToml.background.resolveHeight())
+        // clamp frame height between 1 and 55
+        .frame(height: min(max(configManager.config.rootToml.background.resolveHeight() ?? Constants.menuBarHeight, 1.0), Constants.menuBarHeight))
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 25)
         .background(.black.opacity(0.001))
