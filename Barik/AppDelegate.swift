@@ -13,7 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     name: Notification.Name("ShowWhatsNewBanner"), object: nil)
             }
         }
-
+        
         MenuBarPopup.setup()
         setupPanels()
 
