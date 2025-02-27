@@ -263,13 +263,13 @@ struct BackgroundConfig: Decodable {
         height = try container.decodeIfPresent(BackgroundHeight.self, forKey: .height)
     }
     
-    func resolveHeight() -> Float? {
+    func resolveHeight() -> CGFloat? {
         guard let height = height else { return nil }
         switch height {
         case .menuBar:
-            return NSApplication.shared.mainMenu.map({ Float($0.menuBarHeight) }) ?? 0
+            return NSApplication.shared.mainMenu.map({ CGFloat($0.menuBarHeight) }) ?? 0
         case .float(let value):
-            return value
+            return CGFloat(value)
         }
     }
 }

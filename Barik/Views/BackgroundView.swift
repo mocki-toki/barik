@@ -18,6 +18,6 @@ struct BackgroundView: View {
             .background(.regularMaterial)
             .preferredColorScheme(theme)
             .opacity(configManager.config.rootToml.background.enabled ? 1 : 0)
-            .frame(height: configManager.config.rootToml.background.resolveHeight().map { CGFloat($0) })
+            .frame(height: configManager.config.rootToml.background.resolveHeight())
     }
 }
