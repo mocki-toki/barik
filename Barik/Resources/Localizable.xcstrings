@@ -132,6 +132,17 @@
         }
       }
     },
+    "Barik" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Barik"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
     "Channel: %@" : {
       "localizations" : {
         "ar" : {
@@ -252,6 +263,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "频道: %@"
+          }
+        }
+      }
+    },
+    "Charging" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "شَحْن"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Charging"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "充电"
           }
         }
       }
@@ -629,6 +662,28 @@
         }
       }
     },
+    "Not Charging" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "لا يشحن"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not Charging"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不充电"
+          }
+        }
+      }
+    },
     "RSSI: %lld" : {
       "localizations" : {
         "ar" : {
@@ -749,6 +804,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "RSSI: %lld"
+          }
+        }
+      }
+    },
+    "Settings" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إعدادات الواي فاي"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置"
           }
         }
       }
@@ -1495,6 +1572,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "v%@ 更新日志"
+          }
+        }
+      }
+    },
+    "Welcome to" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "أهلاً وسهلاً في"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welcome to"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "欢迎来到"
           }
         }
       }

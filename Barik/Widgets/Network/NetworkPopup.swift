@@ -24,6 +24,17 @@ struct NetworkPopup: View {
                         Text("RSSI: \(viewModel.rssi)")
                         Text("Noise: \(viewModel.noise)")
                         Text("Channel: \(viewModel.channel)")
+                        
+                        Button(action: {
+                            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.network") {
+                                NSWorkspace.shared.open(url)
+                            }
+                        }) {
+                            Label("Settings", systemImage: "gear")
+                        }
+                        .foregroundStyle(.secondary)
+                        .buttonStyle(.borderless)
+                        .padding(.top)
                     }
                     .font(.subheadline)
                 }
