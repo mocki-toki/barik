@@ -3,21 +3,36 @@ import SwiftUI
 struct BackgroundView: View {
     @ObservedObject var configManager = ConfigManager.shared
 
-    var body: some View {
-        let theme: ColorScheme? =
+    private func spacer(_ geometry: GeometryProxy) -> some View {
+        let theme: ColorScheme? = {
             switch configManager.config.rootToml.theme {
-            case "dark":
-                .dark
-            case "light":
-                .light
-            default:
-                .none
+            case "dark": return .dark
+            case "light": return .light
+            default: return nil
             }
+        }()
         
-        Spacer()
-            .background(.regularMaterial)
+        let height = configManager.config.experimental.background.resolveHeight()
+        
+        return Color.clear
+            .frame(height: height ?? geometry.size.height)
             .preferredColorScheme(theme)
-            .opacity(configManager.config.rootToml.background.enabled ? 1 : 0)
-            .frame(height: configManager.config.rootToml.background.resolveHeight())
+        
+    }
+    
+    var body: some View {
+        if configManager.config.experimental.background.displayed {
+            GeometryReader { geometry in
+                if configManager.config.experimental.background.black {
+                    spacer(geometry)
+                        .background(.black)
+                        .id("black")
+                } else {
+                    spacer(geometry)
+                        .background(configManager.config.experimental.background.blur)
+                        .id("blur")
+                }
+            }
+        }
     }
 }

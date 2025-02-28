@@ -52,19 +52,30 @@ struct NowPlayingWidget: View {
 /// A view that composes the album art and song text into a capsule-shaped content view.
 struct NowPlayingContent: View {
     let song: NowPlayingSong
-
+    @ObservedObject var configManager = ConfigManager.shared
+    var foregroundHeight: CGFloat { configManager.config.experimental.foreground.resolveHeight() }
+    
     var body: some View {
-        HStack(spacing: 8) {
-            AlbumArtView(song: song)
-            SongTextView(song: song)
+        Group {
+            if foregroundHeight < 38 {
+                HStack(spacing: 8) {
+                    AlbumArtView(song: song)
+                    SongTextView(song: song)
+                }
+            } else {
+                HStack(spacing: 8) {
+                    AlbumArtView(song: song)
+                    SongTextView(song: song)
+                }
+                .padding(.horizontal, foregroundHeight < 45 ? 8 : 12)
+                .frame(height: foregroundHeight < 45 ? 30 : 38)
+                .background(configManager.config.experimental.foreground.widgetsBackground.blur)
+                .clipShape(Capsule())
+                .overlay(
+                    Capsule().stroke(Color.noActive, lineWidth: 1)
+                )
+            }
         }
-        .padding(.horizontal, 12)
-        .frame(height: 38)
-        .background(.ultraThinMaterial)
-        .clipShape(Capsule())
-        .overlay(
-            Capsule().stroke(Color.noActive, lineWidth: 1)
-        )
         .foregroundColor(.foreground)
     }
 }
@@ -139,17 +150,25 @@ struct AlbumArtView: View {
 /// A view that displays the song title and artist.
 struct SongTextView: View {
     let song: NowPlayingSong
+    @ObservedObject var configManager = ConfigManager.shared
+    var foregroundHeight: CGFloat { configManager.config.experimental.foreground.resolveHeight() }
 
     var body: some View {
+
         VStack(alignment: .leading, spacing: -1) {
-            Text(song.title)
-                .font(.system(size: 11))
-                .fontWeight(.medium)
-                .padding(.trailing, 2)
-            Text(song.artist)
-                .opacity(0.8)
-                .font(.system(size: 10))
-                .padding(.trailing, 2)
+            if foregroundHeight >= 30 {
+                Text(song.title)
+                    .font(.system(size: 11))
+                    .fontWeight(.medium)
+                    .padding(.trailing, 2)
+                Text(song.artist)
+                    .opacity(0.8)
+                    .font(.system(size: 10))
+                    .padding(.trailing, 2)
+            } else {
+                Text(song.artist + " — " + song.title)
+                    .font(.system(size: 12))
+            }
         }
         // Disable animations for text changes.
         .transaction { transaction in

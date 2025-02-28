@@ -5,15 +5,14 @@ struct RootToml: Decodable {
     var theme: String?
     var yabai: YabaiConfig?
     var aerospace: AerospaceConfig?
+    var experimental: ExperimentalConfig?
     var widgets: WidgetsSection
-    var background: BackgroundConfig
 
     init() {
         self.theme = nil
         self.yabai = nil
         self.aerospace = nil
         self.widgets = WidgetsSection(displayed: [], others: [:])
-        self.background = BackgroundConfig(enabled: false, height: nil)
     }
 }
 
@@ -34,6 +33,10 @@ struct Config {
     
     var aerospace: AerospaceConfig {
         rootToml.aerospace ?? AerospaceConfig()
+    }
+    
+    var experimental: ExperimentalConfig {
+        rootToml.experimental ?? ExperimentalConfig()
     }
 }
 
@@ -243,29 +246,58 @@ struct AerospaceConfig: Decodable {
     }
 }
 
-struct BackgroundConfig: Decodable {
-    let enabled: Bool
-    let height: BackgroundHeight?
+struct ExperimentalConfig: Decodable {
+    let foreground: ForegroundConfig
+    let background: BackgroundConfig
     
     enum CodingKeys: String, CodingKey {
-        case enabled
-        case height
+        case foreground, background
     }
     
-    init(enabled: Bool, height: BackgroundHeight?) {
-        self.enabled = enabled
-        self.height = height
+    init() {
+        self.foreground = ForegroundConfig()
+        self.background = BackgroundConfig()
     }
     
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        enabled = try container.decode(Bool.self, forKey: .enabled)
-        height = try container.decodeIfPresent(BackgroundHeight.self, forKey: .height)
+        foreground = try container.decodeIfPresent(ForegroundConfig.self, forKey: .foreground) ?? ForegroundConfig()
+        background = try container.decodeIfPresent(BackgroundConfig.self, forKey: .background) ?? BackgroundConfig()
+    }
+}
+
+struct ForegroundConfig: Decodable {
+    let height: BackgroundForegroundHeight
+    let horizontalPadding: CGFloat
+    let widgetsBackground: WidgetBackgroundConfig
+    let spacing: CGFloat
+    
+    init() {
+        self.height = .barikDefault
+        self.horizontalPadding = Constants.menuBarHorizontalPadding
+        self.widgetsBackground = WidgetBackgroundConfig()
+        self.spacing = 15
     }
     
-    func resolveHeight() -> CGFloat? {
-        guard let height = height else { return nil }
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        height = try container.decodeIfPresent(BackgroundForegroundHeight.self, forKey: .height) ?? .barikDefault
+        horizontalPadding = try container.decodeIfPresent(CGFloat.self, forKey: .horizontalPadding) ?? Constants.menuBarHorizontalPadding
+        widgetsBackground = try container.decodeIfPresent(WidgetBackgroundConfig.self, forKey: .widgetsBackground) ?? WidgetBackgroundConfig()
+        spacing = try container.decodeIfPresent(CGFloat.self, forKey: .spacing) ?? 15
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case height
+        case horizontalPadding = "horizontal-padding"
+        case widgetsBackground = "widgets-background"
+        case spacing
+    }
+    
+    func resolveHeight() -> CGFloat {
         switch height {
+        case .barikDefault:
+            return CGFloat(Constants.menuBarHeight)
         case .menuBar:
             return NSApplication.shared.mainMenu.map({ CGFloat($0.menuBarHeight) }) ?? 0
         case .float(let value):
@@ -274,7 +306,106 @@ struct BackgroundConfig: Decodable {
     }
 }
 
-enum BackgroundHeight: Decodable {
+struct WidgetBackgroundConfig: Decodable {
+    let displayed: Bool
+    let blur: Material
+    
+    init() {
+        self.displayed = false
+        self.blur = .regular
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        displayed = try container.decodeIfPresent(Bool.self, forKey: .displayed) ?? false
+        
+        var materialIndex = try container.decodeIfPresent(Int.self, forKey: .blur) ?? 1
+        if materialIndex < 1 {
+            materialIndex = 1
+        } else if materialIndex > 6 {
+            materialIndex = 6
+        }
+        
+        blur = [.ultraThin, .thin, .regular, .thick, .ultraThick, .bar][materialIndex - 1]
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case displayed, height, blur
+    }
+}
+
+struct BackgroundConfig: Decodable {
+    let displayed: Bool
+    let height: BackgroundForegroundHeight
+    let blur: Material
+    let black: Bool
+
+    init() {
+        self.displayed = true
+        self.height = .barikDefault
+        self.blur = .regular
+        self.black = false
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        displayed = try container.decodeIfPresent(Bool.self, forKey: .displayed) ?? true
+        height = try container.decodeIfPresent(BackgroundForegroundHeight.self, forKey: .height) ?? .barikDefault
+        
+        var materialIndex = try container.decodeIfPresent(Int.self, forKey: .blur) ?? 1
+        if materialIndex < 1 {
+            materialIndex = 1
+        } else if materialIndex > 7 {
+            materialIndex = 7
+        }
+        
+        blur = [.ultraThin, .thin, .regular, .thick, .ultraThick, .bar, .bar][materialIndex - 1]
+        self.black = materialIndex == 7
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case displayed, height, blur
+    }
+
+    func resolveHeight() -> CGFloat? {
+        switch height {
+        case .barikDefault:
+            return nil
+        case .menuBar:
+            return NSApplication.shared.mainMenu.map({ CGFloat($0.menuBarHeight) }) ?? 0
+        case .float(let value):
+            return CGFloat(value)
+        }
+    }
+}
+
+enum ForegroundPadding: Decodable {
+    case float(Float)
+    
+    init(from decoder: Decoder) throws {
+        if let floatValue = try? decoder.singleValueContainer().decode(Float.self) {
+            self = .float(floatValue)
+            return
+        }
+        
+        if let intValue = try? decoder.singleValueContainer().decode(Int.self) {
+            self = .float(Float(intValue))
+            return
+        }
+        
+        throw DecodingError.typeMismatch(
+            ForegroundPadding.self,
+            DecodingError.Context(
+                codingPath: decoder.codingPath,
+                debugDescription: "Expected a float value"
+            )
+        )
+    }
+}
+
+enum BackgroundForegroundHeight: Decodable {
+    case barikDefault
     case menuBar
     case float(Float)
     
@@ -284,23 +415,35 @@ enum BackgroundHeight: Decodable {
             return
         }
         
+        if let intValue = try? decoder.singleValueContainer().decode(Int.self) {
+            self = .float(Float(intValue))
+            return
+        }
+        
         if let stringValue = try? decoder.singleValueContainer().decode(String.self) {
+            if stringValue == "default" {
+                self = .barikDefault
+                return
+            }
+            
             if stringValue == "menu-bar" {
                 self = .menuBar
                 return
             }
+            
             throw DecodingError.dataCorruptedError(
                 in: try decoder.singleValueContainer(),
-                debugDescription: "Expected 'menu-bar' or a float value, but found \(stringValue)"
+                debugDescription: "Expected 'default', 'menu-bar' or a float value, but found \(stringValue)"
             )
         }
         
         throw DecodingError.typeMismatch(
-            BackgroundHeight.self,
+            ForegroundPadding.self,
             DecodingError.Context(
                 codingPath: decoder.codingPath,
-                debugDescription: "Expected 'menu-bar' or a float value"
+                debugDescription: "Expected 'default', 'menu-bar' or a float value"
             )
         )
     }
 }
+

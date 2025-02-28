@@ -3,12 +3,16 @@ import SwiftUI
 struct SpacesWidget: View {
     @StateObject var viewModel = SpacesViewModel()
 
+    @ObservedObject var configManager = ConfigManager.shared
+    var foregroundHeight: CGFloat { configManager.config.experimental.foreground.resolveHeight() }
+
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: foregroundHeight < 30 ? 0 : 8) {
             ForEach(viewModel.spaces) { space in
                 SpaceView(space: space)
             }
         }
+        .experimentalConfiguration(horizontalPadding: 5, cornerRadius: 10)
         .animation(.smooth(duration: 0.3), value: viewModel.spaces)
         .foregroundStyle(Color.foreground)
         .environmentObject(viewModel)
@@ -22,6 +26,9 @@ private struct SpaceView: View {
 
     var config: ConfigData { configProvider.config }
     var spaceConfig: ConfigData { config["space"]?.dictionaryValue ?? [:] }
+
+    @ObservedObject var configManager = ConfigManager.shared
+    var foregroundHeight: CGFloat { configManager.config.experimental.foreground.resolveHeight() }
 
     var showKey: Bool { spaceConfig["show-key"]?.boolValue ?? true }
 
@@ -49,12 +56,16 @@ private struct SpaceView: View {
         }
         .frame(height: 30)
         .background(
-            isFocused
-                ? Color.active
-                : isHovered ? Color.noActive.opacity(0.5) : Color.noActive
+            foregroundHeight < 30 ?
+            (isFocused
+             ? Color.noActive
+             : Color.clear) :
+                (isFocused
+                 ? Color.active
+                 : isHovered ? Color.noActive : Color.noActive)
         )
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .shadow(color: .shadow, radius: 2)
+        .clipShape(RoundedRectangle(cornerRadius: foregroundHeight < 30 ? 0 : 8, style: .continuous))
+        .shadow(color: .shadow, radius: foregroundHeight < 30 ? 0 : 2)
         .transition(.blurReplace)
         .onTapGesture {
             viewModel.switchToSpace(space, needWindowFocus: true)

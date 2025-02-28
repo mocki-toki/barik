@@ -4,6 +4,9 @@ struct MenuBarPopupView<Content: View>: View {
     let content: Content
     let isPreview: Bool
 
+    @ObservedObject var configManager = ConfigManager.shared
+    var foregroundHeight: CGFloat { configManager.config.experimental.foreground.resolveHeight() }
+
     @State private var contentHeight: CGFloat = 0
     @State private var viewFrame: CGRect = .zero
     @State private var animationValue: Double = 0.01
@@ -31,7 +34,7 @@ struct MenuBarPopupView<Content: View>: View {
             content
                 .background(Color.black)
                 .cornerRadius(((1.0 - animationValue) * 1) + 40)
-                .padding(.top, Constants.menuBarHeight)
+                .padding(.top, foregroundHeight + 5)
                 .offset(x: computedOffset, y: computedYOffset)
                 .shadow(radius: 30)
                 .blur(radius: (1.0 - (0.1 + 0.9 * animationValue)) * 20)
