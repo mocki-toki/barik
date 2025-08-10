@@ -48,7 +48,11 @@ class SpacesViewModel: ObservableObject {
                 }
                 return
             }
-            let sortedSpaces = spaces.sorted { $0.id < $1.id }
+            let sortedSpaces = spaces.sorted {
+                let lhsInt = Int($0.id) ?? Int.max
+                let rhsInt = Int($1.id) ?? Int.max
+                return lhsInt < rhsInt
+            }
             DispatchQueue.main.async {
                 self.spaces = sortedSpaces
             }
