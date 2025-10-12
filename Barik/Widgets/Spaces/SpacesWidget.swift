@@ -4,6 +4,7 @@ struct SpacesWidget: View {
     @StateObject var viewModel = SpacesViewModel()
 
     @ObservedObject var configManager = ConfigManager.shared
+    
     var foregroundHeight: CGFloat { configManager.config.experimental.foreground.resolveHeight() }
 
     var body: some View {
@@ -41,7 +42,7 @@ private struct SpaceView: View {
         HStack(spacing: 0) {
             Spacer().frame(width: 10)
             if showKey {
-                Text(space.id)
+                Text(space.label)
                     .font(.headline)
                     .frame(minWidth: 15)
                     .fixedSize(horizontal: true, vertical: false)
@@ -90,7 +91,11 @@ private struct WindowView: View {
 
     var showTitle: Bool { windowConfig["show-title"]?.boolValue ?? true }
     var maxLength: Int { titleConfig["max-length"]?.intValue ?? 50 }
-    var alwaysDisplayAppTitleFor: [String] { titleConfig["always-display-app-name-for"]?.arrayValue?.filter({ $0.stringValue != nil }).map { $0.stringValue! } ?? [] }
+    var alwaysDisplayAppTitleFor: [String] { 
+        titleConfig["always-display-app-name-for"]?.arrayValue?
+            .filter({ $0.stringValue != nil })
+            .map { $0.stringValue! } ?? [] 
+    }
 
     let window: AnyWindow
     let space: AnySpace
@@ -100,10 +105,12 @@ private struct WindowView: View {
     var body: some View {
         let titleMaxLength = maxLength
         let size: CGFloat = 21
-        let sameAppCount = space.windows.filter { $0.appName == window.appName }
-            .count
-        let title = sameAppCount > 1 && !alwaysDisplayAppTitleFor.contains { $0 == window.appName } ? window.title : (window.appName ?? "")
+        let sameAppCount = space.windows.filter { $0.appName == window.appName }.count
+        let title = sameAppCount > 1 && !alwaysDisplayAppTitleFor.contains { $0 == window.appName } 
+            ? window.title 
+            : (window.appName ?? "")
         let spaceIsFocused = space.windows.contains { $0.isFocused }
+        
         HStack {
             ZStack {
                 if let icon = window.appIcon {

@@ -1,7 +1,9 @@
 import AppKit
 
-protocol SpaceModel: Identifiable, Equatable, Codable {
+protocol SpaceModel<ID>: Identifiable, Equatable, Codable {
     associatedtype WindowType: WindowModel
+    var id: ID { get }
+    var label: String { get }
     var isFocused: Bool { get set }
     var windows: [WindowType] { get set }
 }
@@ -47,17 +49,13 @@ struct AnyWindow: Identifiable, Equatable {
 
 struct AnySpace: Identifiable, Equatable {
     let id: String
+    let label: String
     let isFocused: Bool
     let windows: [AnyWindow]
 
     init<S: SpaceModel>(_ space: S) {
-        if let aero = space as? AeroSpace {
-            self.id = aero.workspace
-        } else if let yabai = space as? YabaiSpace {
-            self.id = String(yabai.id)
-        } else {
-            self.id = "0"
-        }
+        self.id = String(describing: space.id)
+        self.label = space.label
         self.isFocused = space.isFocused
         self.windows = space.windows.map { AnyWindow($0) }
     }
