@@ -136,16 +136,32 @@ struct MenuBarPopupView<Content: View>: View {
     }
 
     var computedOffset: CGFloat {
-        let screenWidth = NSScreen.main?.frame.width ?? 0
+        // Get the screen for the current popup
+        let screens: [NSScreen]
+        let monitorMode = ConfigManager.shared.config.monitors.mode
+
+        switch monitorMode {
+        case .main:
+            screens = NSScreen.main.map { [$0] } ?? []
+        case .all:
+            screens = NSScreen.screens
+        }
+
+        let screenIndex = MenuBarPopup.currentScreenIndex ?? 0
+        guard screenIndex < screens.count else { return 0 }
+
+        let screen = screens[screenIndex]
+        let screenFrame = screen.frame
+
         let W = viewFrame.width
         let M = viewFrame.midX
         let newLeft = (M - W / 2) - 20
         let newRight = (M + W / 2) + 20
 
-        if newRight > screenWidth {
-            return screenWidth - newRight
-        } else if newLeft < 0 {
-            return -newLeft
+        if newRight > screenFrame.maxX {
+            return screenFrame.maxX - newRight
+        } else if newLeft < screenFrame.minX {
+            return screenFrame.minX - newLeft
         }
         return 0
     }

@@ -6,12 +6,14 @@ struct RootToml: Decodable {
     var yabai: YabaiConfig?
     var aerospace: AerospaceConfig?
     var experimental: ExperimentalConfig?
+    var monitors: MonitorsConfig?
     var widgets: WidgetsSection
 
     init() {
         self.theme = nil
         self.yabai = nil
         self.aerospace = nil
+        self.monitors = nil
         self.widgets = WidgetsSection(displayed: [], others: [:])
     }
 }
@@ -26,17 +28,21 @@ struct Config {
     var theme: String {
         rootToml.theme ?? "light"
     }
-    
+
     var yabai: YabaiConfig {
         rootToml.yabai ?? YabaiConfig()
     }
-    
+
     var aerospace: AerospaceConfig {
         rootToml.aerospace ?? AerospaceConfig()
     }
-    
+
     var experimental: ExperimentalConfig {
         rootToml.experimental ?? ExperimentalConfig()
+    }
+
+    var monitors: MonitorsConfig {
+        rootToml.monitors ?? MonitorsConfig()
     }
 }
 
@@ -408,35 +414,35 @@ enum BackgroundForegroundHeight: Decodable {
     case barikDefault
     case menuBar
     case float(Float)
-    
+
     init(from decoder: Decoder) throws {
         if let floatValue = try? decoder.singleValueContainer().decode(Float.self) {
             self = .float(floatValue)
             return
         }
-        
+
         if let intValue = try? decoder.singleValueContainer().decode(Int.self) {
             self = .float(Float(intValue))
             return
         }
-        
+
         if let stringValue = try? decoder.singleValueContainer().decode(String.self) {
             if stringValue == "default" {
                 self = .barikDefault
                 return
             }
-            
+
             if stringValue == "menu-bar" {
                 self = .menuBar
                 return
             }
-            
+
             throw DecodingError.dataCorruptedError(
                 in: try decoder.singleValueContainer(),
                 debugDescription: "Expected 'default', 'menu-bar' or a float value, but found \(stringValue)"
             )
         }
-        
+
         throw DecodingError.typeMismatch(
             ForegroundPadding.self,
             DecodingError.Context(
@@ -445,5 +451,27 @@ enum BackgroundForegroundHeight: Decodable {
             )
         )
     }
+}
+
+struct MonitorsConfig: Decodable {
+    let mode: MonitorMode
+
+    enum CodingKeys: String, CodingKey {
+        case mode
+    }
+
+    init() {
+        self.mode = .all
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        mode = try container.decodeIfPresent(MonitorMode.self, forKey: .mode) ?? .all
+    }
+}
+
+enum MonitorMode: String, Decodable {
+    case main = "main"
+    case all = "all"
 }
 

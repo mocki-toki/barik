@@ -1,8 +1,8 @@
 import SwiftUI
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    private var backgroundPanel: NSPanel?
-    private var menuBarPanel: NSPanel?
+    private var backgroundPanels: [NSPanel] = []
+    private var menuBarPanels: [NSPanel] = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         if let error = ConfigManager.shared.initError {
@@ -35,29 +35,58 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// Configures and displays the background and menu bar panels.
     private func setupPanels() {
-        guard let screenFrame = NSScreen.main?.frame else { return }
-        setupPanel(
-            &backgroundPanel,
-            frame: screenFrame,
-            level: Int(CGWindowLevelForKey(.desktopWindow)),
-            hostingRootView: AnyView(BackgroundView()))
-        setupPanel(
-            &menuBarPanel,
-            frame: screenFrame,
-            level: Int(CGWindowLevelForKey(.backstopMenu)),
-            hostingRootView: AnyView(MenuBarView()))
-    }
+        let monitorMode = ConfigManager.shared.config.monitors.mode
+        let screens: [NSScreen]
 
-    /// Sets up an NSPanel with the provided parameters.
-    private func setupPanel(
-        _ panel: inout NSPanel?, frame: CGRect, level: Int,
-        hostingRootView: AnyView
-    ) {
-        if let existingPanel = panel {
-            existingPanel.setFrame(frame, display: true)
-            return
+        switch monitorMode {
+        case .main:
+            if let mainScreen = NSScreen.main {
+                screens = [mainScreen]
+            } else {
+                return
+            }
+        case .all:
+            screens = NSScreen.screens
         }
 
+        // Remove excess panels if screens were reduced
+        while backgroundPanels.count > screens.count {
+            backgroundPanels.removeLast().close()
+        }
+        while menuBarPanels.count > screens.count {
+            menuBarPanels.removeLast().close()
+        }
+
+        // Create or update panels for each screen
+        for (index, screen) in screens.enumerated() {
+            let screenFrame = screen.frame
+
+            if index < backgroundPanels.count {
+                // Update existing panel
+                backgroundPanels[index].setFrame(screenFrame, display: true)
+                menuBarPanels[index].setFrame(screenFrame, display: true)
+            } else {
+                // Create new panels
+                let backgroundPanel = createPanel(
+                    frame: screenFrame,
+                    level: Int(CGWindowLevelForKey(.desktopWindow)),
+                    hostingRootView: AnyView(BackgroundView())
+                )
+                let menuBarPanel = createPanel(
+                    frame: screenFrame,
+                    level: Int(CGWindowLevelForKey(.backstopMenu)),
+                    hostingRootView: AnyView(MenuBarView())
+                )
+                backgroundPanels.append(backgroundPanel)
+                menuBarPanels.append(menuBarPanel)
+            }
+        }
+    }
+
+    /// Creates an NSPanel with the provided parameters.
+    private func createPanel(
+        frame: CGRect, level: Int, hostingRootView: AnyView
+    ) -> NSPanel {
         let newPanel = NSPanel(
             contentRect: frame,
             styleMask: [.nonactivatingPanel],
@@ -69,7 +98,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         newPanel.collectionBehavior = [.canJoinAllSpaces]
         newPanel.contentView = NSHostingView(rootView: hostingRootView)
         newPanel.orderFront(nil)
-        panel = newPanel
+        return newPanel
     }
     
     private func showFatalConfigError(message: String) {

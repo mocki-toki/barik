@@ -1,6 +1,6 @@
 import SwiftUI
 
-private var panel: NSPanel?
+private var panels: [NSPanel] = []
 
 class HidingPanel: NSPanel, NSWindowDelegate {
     var hideTimer: Timer?
@@ -35,11 +35,17 @@ class HidingPanel: NSPanel, NSWindowDelegate {
 
 class MenuBarPopup {
     static var lastContentIdentifier: String? = nil
+    static var currentScreenIndex: Int? = nil
 
     static func show<Content: View>(
         rect: CGRect, id: String, @ViewBuilder content: @escaping () -> Content
     ) {
-        guard let panel = panel else { return }
+        // Determine which screen the widget is on
+        let screenIndex = getScreenIndex(for: rect)
+        guard screenIndex < panels.count else { return }
+
+        let panel = panels[screenIndex]
+        currentScreenIndex = screenIndex
 
         if panel.isKeyWindow, lastContentIdentifier == id {
             NotificationCenter.default.post(name: .willHideWindow, object: nil)
@@ -108,27 +114,80 @@ class MenuBarPopup {
     }
 
     static func setup() {
-        guard let screen = NSScreen.main?.visibleFrame else { return }
-        let panelFrame = NSRect(
-            x: 0,
-            y: 0,
-            width: screen.size.width,
-            height: screen.size.height
-        )
+        let monitorMode = ConfigManager.shared.config.monitors.mode
+        let screens: [NSScreen]
 
-        let newPanel = HidingPanel(
-            contentRect: panelFrame,
-            styleMask: [.nonactivatingPanel],
-            backing: .buffered,
-            defer: false
-        )
+        switch monitorMode {
+        case .main:
+            if let mainScreen = NSScreen.main {
+                screens = [mainScreen]
+            } else {
+                return
+            }
+        case .all:
+            screens = NSScreen.screens
+        }
 
-        newPanel.level = NSWindow.Level(
-            rawValue: Int(CGWindowLevelForKey(.floatingWindow)))
-        newPanel.backgroundColor = .clear
-        newPanel.hasShadow = false
-        newPanel.collectionBehavior = [.canJoinAllSpaces]
+        // Remove excess panels if screens were reduced
+        while panels.count > screens.count {
+            panels.removeLast().close()
+        }
 
-        panel = newPanel
+        // Create panels for each screen
+        for (index, screen) in screens.enumerated() {
+            let panelFrame = NSRect(
+                x: 0,
+                y: 0,
+                width: screen.visibleFrame.width,
+                height: screen.visibleFrame.height
+            )
+
+            if index < panels.count {
+                // Update existing panel
+                panels[index].setFrame(panelFrame, display: true)
+            } else {
+                // Create new panel
+                let newPanel = HidingPanel(
+                    contentRect: panelFrame,
+                    styleMask: [.nonactivatingPanel],
+                    backing: .buffered,
+                    defer: false
+                )
+
+                newPanel.level = NSWindow.Level(
+                    rawValue: Int(CGWindowLevelForKey(.floatingWindow)))
+                newPanel.backgroundColor = .clear
+                newPanel.hasShadow = false
+                newPanel.collectionBehavior = [.canJoinAllSpaces]
+
+                panels.append(newPanel)
+            }
+        }
+    }
+
+    private static func getScreenIndex(for rect: CGRect) -> Int {
+        let monitorMode = ConfigManager.shared.config.monitors.mode
+
+        switch monitorMode {
+        case .main:
+            return 0
+        case .all:
+            let screens = NSScreen.screens
+
+            // Find which screen contains the rect (based on the midpoint)
+            let midX = rect.midX
+            let midY = rect.midY
+
+            for (index, screen) in screens.enumerated() {
+                let frame = screen.frame
+                if midX >= frame.minX && midX <= frame.maxX &&
+                   midY >= frame.minY && midY <= frame.maxY {
+                    return index
+                }
+            }
+
+            // Default to main screen (index 0) if not found
+            return 0
+        }
     }
 }
