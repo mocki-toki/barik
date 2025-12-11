@@ -33,6 +33,7 @@ struct AeroSpace: SpaceModel {
     typealias WindowType = AeroWindow
     let workspace: String
     var id: String { workspace }
+    var label: String { id }
     var isFocused: Bool = false
     var windows: [AeroWindow] = []
 
