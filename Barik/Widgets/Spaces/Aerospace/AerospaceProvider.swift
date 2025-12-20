@@ -1,9 +1,11 @@
 import Foundation
+import Combine
 
-class AerospaceSpacesProvider: SpacesProvider, SwitchableSpacesProvider {
+class AerospaceSpacesProvider: SpacesProvider, SwitchableSpacesProvider, EventBasedSpacesProvider {
     typealias SpaceType = AeroSpace
     let executablePath = ConfigManager.shared.config.aerospace.path
-
+    var spacesPublisher: AnyPublisher<SpaceEvent, Never> = PassthroughSubject<SpaceEvent, Never>().eraseToAnyPublisher()
+    
     func getSpacesWithWindows() -> [AeroSpace]? {
         guard var spaces = fetchSpaces(), let windows = fetchWindows() else {
             return nil
@@ -132,5 +134,13 @@ class AerospaceSpacesProvider: SpacesProvider, SwitchableSpacesProvider {
             print("Decode focused window error: \(error)")
             return nil
         }
+    }
+    
+    func startObserving() {
+        <#code#>
+    }
+    
+    func stopObserving() {
+        <#code#>
     }
 }
