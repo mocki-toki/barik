@@ -4,8 +4,10 @@ import Foundation
 
 class SpacesViewModel: ObservableObject {
     @Published var spaces: [AnySpace] = []
-    private var timer: Timer?
     private var provider: AnySpacesProvider?
+    private var cancellables: Set<AnyCancellable> = []
+    private var spacesById: [String: AnySpace] = [:]
+    private var workspaceObservers: [NSObjectProtocol] = []
 
     init() {
         let runningApps = NSWorkspace.shared.runningApplications.compactMap {
@@ -26,16 +28,120 @@ class SpacesViewModel: ObservableObject {
     }
 
     private func startMonitoring() {
-        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) {
-            [weak self] _ in
-            self?.loadSpaces()
+        if let provider = provider {
+            if provider.isEventBased {
+                startMonitoringEventBasedProvider()
+            } else {
+                startMonitoringWithWorkspaceNotifications()
+            }
         }
-        loadSpaces()
     }
 
     private func stopMonitoring() {
-        timer?.invalidate()
-        timer = nil
+        if let provider = provider {
+            if provider.isEventBased {
+                stopMonitoringEventBasedProvider()
+            } else {
+                stopMonitoringWorkspaceNotifications()
+            }
+        }
+    }
+
+    private func startMonitoringWithWorkspaceNotifications() {
+        let notificationCenter = NSWorkspace.shared.notificationCenter
+
+        // Observe space changes
+        let spaceObserver = notificationCenter.addObserver(
+            forName: NSWorkspace.activeSpaceDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.loadSpaces()
+        }
+        workspaceObservers.append(spaceObserver)
+
+        // Observe application activation (may indicate space/window changes)
+        let activateObserver = notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.loadSpaces()
+        }
+        workspaceObservers.append(activateObserver)
+
+        // Observe application deactivation
+        let deactivateObserver = notificationCenter.addObserver(
+            forName: NSWorkspace.didDeactivateApplicationNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.loadSpaces()
+        }
+        workspaceObservers.append(deactivateObserver)
+
+        // Load initial state
+        loadSpaces()
+    }
+
+    private func stopMonitoringWorkspaceNotifications() {
+        let notificationCenter = NSWorkspace.shared.notificationCenter
+        for observer in workspaceObservers {
+            notificationCenter.removeObserver(observer)
+        }
+        workspaceObservers.removeAll()
+    }
+
+    private func startMonitoringEventBasedProvider() {
+        guard let provider = provider else { return }
+        provider.spacesPublisher?
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] event in
+                self?.handleSpaceEvent(event)
+            }
+            .store(in: &cancellables)
+        provider.startObserving()
+    }
+
+    private func stopMonitoringEventBasedProvider() {
+        provider?.stopObserving()
+        cancellables.removeAll()
+    }
+
+    private func handleSpaceEvent(_ event: SpaceEvent) {
+        switch event {
+        case .initialState(let spaces):
+            spacesById = Dictionary(uniqueKeysWithValues: spaces.map { ($0.id, $0) })
+            updatePublishedSpaces()
+        case .focusChanged(let spaceId):
+            for (id, space) in spacesById {
+                let newFocused = id == spaceId
+                if space.isFocused != newFocused {
+                    spacesById[id] = AnySpace(
+                        id: space.id, isFocused: newFocused, windows: space.windows)
+                }
+            }
+            updatePublishedSpaces()
+        case .windowsUpdated(let spaceId, let windows):
+            if let space = spacesById[spaceId] {
+                spacesById[spaceId] = AnySpace(
+                    id: space.id, isFocused: space.isFocused, windows: windows)
+            }
+            updatePublishedSpaces()
+        case .spaceCreated(let spaceId):
+            spacesById[spaceId] = AnySpace(id: spaceId, isFocused: false, windows: [])
+            updatePublishedSpaces()
+        case .spaceDestroyed(let spaceId):
+            spacesById.removeValue(forKey: spaceId)
+            updatePublishedSpaces()
+        }
+    }
+
+    private func updatePublishedSpaces() {
+        let sortedSpaces = spacesById.values.sorted { $0.id < $1.id }
+        if sortedSpaces != spaces {
+            spaces = sortedSpaces
+        }
     }
 
     private func loadSpaces() {

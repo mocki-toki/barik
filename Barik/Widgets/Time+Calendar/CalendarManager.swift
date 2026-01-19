@@ -22,7 +22,7 @@ class CalendarManager: ObservableObject {
     @Published var todaysEvents: [EKEvent] = []
     @Published var tomorrowsEvents: [EKEvent] = []
     private let eventStore = EKEventStore()
-    private var timer: Timer?
+    private var debounceTimer: Timer?
 
     init(configProvider: ConfigProvider) {
         self.configProvider = configProvider
@@ -35,20 +35,35 @@ class CalendarManager: ObservableObject {
     }
 
     private func startMonitoring() {
-        timer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) {
-            [weak self] _ in
-            self?.fetchTodaysEvents()
-            self?.fetchTomorrowsEvents()
-            self?.fetchNextEvent()
-        }
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleCalendarStoreChanged),
+            name: .EKEventStoreChanged,
+            object: eventStore
+        )
         fetchTodaysEvents()
         fetchTomorrowsEvents()
         fetchNextEvent()
     }
 
     private func stopMonitoring() {
-        timer?.invalidate()
-        timer = nil
+        debounceTimer?.invalidate()
+        debounceTimer = nil
+        NotificationCenter.default.removeObserver(
+            self,
+            name: .EKEventStoreChanged,
+            object: eventStore
+        )
+    }
+
+    @objc private func handleCalendarStoreChanged() {
+        debounceTimer?.invalidate()
+        debounceTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) {
+            [weak self] _ in
+            self?.fetchTodaysEvents()
+            self?.fetchTomorrowsEvents()
+            self?.fetchNextEvent()
+        }
     }
 
     private func requestAccess() {

@@ -3,7 +3,7 @@ import SwiftUI
 private var panel: NSPanel?
 
 class HidingPanel: NSPanel, NSWindowDelegate {
-    var hideTimer: Timer?
+    var hideWorkItem: DispatchWorkItem?
 
     override var canBecomeKey: Bool {
         return true
@@ -23,13 +23,12 @@ class HidingPanel: NSPanel, NSWindowDelegate {
 
     func windowDidResignKey(_ notification: Notification) {
         NotificationCenter.default.post(name: .willHideWindow, object: nil)
-        hideTimer = Timer.scheduledTimer(
-            withTimeInterval: TimeInterval(
-                Constants.menuBarPopupAnimationDurationInMilliseconds) / 1000.0,
-            repeats: false
-        ) { [weak self] _ in
+        let workItem = DispatchWorkItem { [weak self] in
             self?.orderOut(nil)
         }
+        hideWorkItem = workItem
+        let duration = Double(Constants.menuBarPopupAnimationDurationInMilliseconds) / 1000.0
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration, execute: workItem)
     }
 }
 
@@ -59,8 +58,8 @@ class MenuBarPopup {
         lastContentIdentifier = id
 
         if let hidingPanel = panel as? HidingPanel {
-            hidingPanel.hideTimer?.invalidate()
-            hidingPanel.hideTimer = nil
+            hidingPanel.hideWorkItem?.cancel()
+            hidingPanel.hideWorkItem = nil
         }
 
         if panel.isKeyWindow {
@@ -73,13 +72,10 @@ class MenuBarPopup {
             DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
                 panel.contentView = NSHostingView(
                     rootView:
-                        ZStack {
-                            MenuBarPopupView {
-                                content()
-                            }
-                            .position(x: rect.midX)
+                        MenuBarPopupView(widgetRect: rect) {
+                            content()
                         }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                         .id(UUID())
                 )
                 panel.makeKeyAndOrderFront(nil)
@@ -91,13 +87,10 @@ class MenuBarPopup {
         } else {
             panel.contentView = NSHostingView(
                 rootView:
-                    ZStack {
-                        MenuBarPopupView {
-                            content()
-                        }
-                        .position(x: rect.midX)
+                    MenuBarPopupView(widgetRect: rect) {
+                        content()
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             )
             panel.makeKeyAndOrderFront(nil)
             DispatchQueue.main.async {
@@ -108,13 +101,11 @@ class MenuBarPopup {
     }
 
     static func setup() {
-        guard let screen = NSScreen.main?.visibleFrame else { return }
-        let panelFrame = NSRect(
-            x: 0,
-            y: 0,
-            width: screen.size.width,
-            height: screen.size.height
-        )
+        guard let screen = NSScreen.main else { return }
+
+        // Use full screen frame so the panel covers the entire screen including menu bar area
+        // This ensures consistent positioning regardless of dock position or menu bar configuration
+        let panelFrame = screen.frame
 
         let newPanel = HidingPanel(
             contentRect: panelFrame,

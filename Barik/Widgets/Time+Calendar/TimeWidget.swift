@@ -8,6 +8,7 @@ struct TimeWidget: View {
 
     var format: String { config["format"]?.stringValue ?? "E d, J:mm" }
     var timeZone: String? { config["time-zone"]?.stringValue }
+    var clickAction: String { config["click-action"]?.stringValue ?? "calendar" }
 
     var calendarFormat: String {
         calendarConfig?["format"]?.stringValue ?? "J:mm"
@@ -57,10 +58,15 @@ struct TimeWidget: View {
         .background(.black.opacity(0.001))
         .monospacedDigit()
         .onTapGesture {
-            MenuBarPopup.show(rect: rect, id: "calendar") {
-                CalendarPopup(
-                    calendarManager: calendarManager,
-                    configProvider: configProvider)
+            switch clickAction {
+            case "notification-center":
+                SystemUIHelper.openNotificationCenter()
+            default:
+                MenuBarPopup.show(rect: rect, id: "calendar") {
+                    CalendarPopup(
+                        calendarManager: calendarManager,
+                        configProvider: configProvider)
+                }
             }
         }
     }

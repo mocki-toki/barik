@@ -65,6 +65,16 @@ enum MusicApp: String, CaseIterable {
     case spotify = "Spotify"
     case music = "Music"
 
+    /// The notification name for playback state changes.
+    var notificationName: Notification.Name {
+        switch self {
+        case .spotify:
+            return Notification.Name("com.spotify.client.PlaybackStateChanged")
+        case .music:
+            return Notification.Name("com.apple.Music.playerInfo")
+        }
+    }
+
     /// AppleScript to fetch the now playing song.
     var nowPlayingScript: String {
         if self == .music {
@@ -143,7 +153,7 @@ final class NowPlayingProvider {
     }
 
     /// Returns the now playing song for a specific music application.
-    private static func fetchNowPlaying(from app: MusicApp) -> NowPlayingSong? {
+    static func fetchNowPlaying(from app: MusicApp) -> NowPlayingSong? {
         guard let output = runAppleScript(app.nowPlayingScript),
             output != "stopped"
         else {
@@ -189,26 +199,71 @@ final class NowPlayingProvider {
 
 // MARK: - Now Playing Manager
 
-/// An observable manager that periodically updates the now playing song.
+/// An observable manager that uses event-driven notifications to update the now playing song.
 final class NowPlayingManager: ObservableObject {
     static let shared = NowPlayingManager()
 
     @Published private(set) var nowPlaying: NowPlayingSong?
-    private var cancellable: AnyCancellable?
+    private var notificationTasks: [Task<Void, Never>] = []
+    private var positionUpdateCancellable: AnyCancellable?
 
     private init() {
-        cancellable = Timer.publish(every: 0.3, on: .main, in: .common)
+        setupNotificationObservers()
+        // Initial fetch to populate current state
+        updateNowPlaying()
+        // Timer for position updates only (less frequent, only when playing)
+        setupPositionUpdates()
+    }
+
+    deinit {
+        notificationTasks.forEach { $0.cancel() }
+    }
+
+    /// Sets up observers for music app notifications using DistributedNotificationCenter.
+    private func setupNotificationObservers() {
+        for app in MusicApp.allCases {
+            let task = Task { @MainActor [weak self] in
+                let notifications = DistributedNotificationCenter.default().notifications(
+                    named: app.notificationName
+                )
+                for await _ in notifications {
+                    self?.handleNotification(from: app)
+                }
+            }
+            notificationTasks.append(task)
+        }
+    }
+
+    /// Handles a notification from a music application.
+    @MainActor
+    private func handleNotification(from app: MusicApp) {
+        // Fetch on background thread to avoid blocking
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let song = NowPlayingProvider.fetchNowPlaying(from: app)
+            DispatchQueue.main.async {
+                self?.nowPlaying = song
+            }
+        }
+    }
+
+    /// Sets up a timer for position updates (only needed for progress bar).
+    private func setupPositionUpdates() {
+        // Update position every 1 second (only when playing)
+        positionUpdateCancellable = Timer.publish(every: 1.0, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
-                self?.updateNowPlaying()
+                guard let self = self,
+                      let current = self.nowPlaying,
+                      current.state == .playing else { return }
+                self.updateNowPlaying()
             }
     }
 
     /// Updates the now playing song asynchronously.
     private func updateNowPlaying() {
-        DispatchQueue.global(qos: .background).async {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             let song = NowPlayingProvider.fetchNowPlaying()
-            DispatchQueue.main.async { [weak self] in
+            DispatchQueue.main.async {
                 self?.nowPlaying = song
             }
         }
