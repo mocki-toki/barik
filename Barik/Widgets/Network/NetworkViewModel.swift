@@ -19,6 +19,28 @@ enum WifiSignalStrength: String {
     case unknown = "Unknown"
 }
 
+struct WiFiNetwork: Identifiable, Hashable {
+    let id = UUID()
+    let ssid: String
+    let rssi: Int
+    let isSecure: Bool
+    let isConnected: Bool
+
+    var signalBars: Int {
+        if rssi >= -50 { return 3 }
+        else if rssi >= -70 { return 2 }
+        else { return 1 }
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(ssid)
+    }
+
+    static func == (lhs: WiFiNetwork, rhs: WiFiNetwork) -> Bool {
+        lhs.ssid == rhs.ssid
+    }
+}
+
 /// Unified view model for monitoring network and Wi‑Fi status.
 final class NetworkStatusViewModel: NSObject, ObservableObject,
     CLLocationManagerDelegate
@@ -33,6 +55,11 @@ final class NetworkStatusViewModel: NSObject, ObservableObject,
     @Published var rssi: Int = 0
     @Published var noise: Int = 0
     @Published var channel: String = "N/A"
+
+    // WiFi control and scanning
+    @Published var isWiFiEnabled: Bool = true
+    @Published var availableNetworks: [WiFiNetwork] = []
+    @Published var isScanning: Bool = false
 
     /// Computed property for signal strength.
     var wifiSignalStrength: WifiSignalStrength {
@@ -59,6 +86,7 @@ final class NetworkStatusViewModel: NSObject, ObservableObject,
         super.init()
         locationManager.delegate = self
         locationManager.requestWhenInUseAuthorization()
+        checkWiFiPowerState()
         startNetworkMonitoring()
         startWiFiMonitoring()
     }
@@ -177,5 +205,129 @@ final class NetworkStatusViewModel: NSObject, ObservableObject,
         didChangeAuthorization status: CLAuthorizationStatus
     ) {
         updateWiFiInfo()
+    }
+
+    // MARK: — WiFi Control Methods
+
+    /// Toggle WiFi on/off
+    func toggleWiFi() {
+        let client = CWWiFiClient.shared()
+        guard let interface = client.interface() else { return }
+
+        do {
+            let newState = !isWiFiEnabled
+            try interface.setPower(newState)
+            DispatchQueue.main.async {
+                self.isWiFiEnabled = newState
+                if !newState {
+                    self.ssid = "Not connected"
+                    self.availableNetworks = []
+                } else {
+                    self.updateWiFiInfo()
+                    self.scanForNetworks()
+                }
+            }
+        } catch {
+            print("Failed to toggle WiFi: \(error)")
+        }
+    }
+
+    /// Scan for available WiFi networks
+    func scanForNetworks() {
+        guard isWiFiEnabled else { return }
+
+        isScanning = true
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self = self else { return }
+
+            let client = CWWiFiClient.shared()
+            guard let interface = client.interface() else {
+                DispatchQueue.main.async {
+                    self.isScanning = false
+                }
+                return
+            }
+
+            do {
+                let networks = try interface.scanForNetworks(withSSID: nil)
+                let currentSSID = interface.ssid()
+
+                var networkList: [WiFiNetwork] = []
+                var seenSSIDs = Set<String>()
+
+                for network in networks {
+                    guard let ssid = network.ssid, !ssid.isEmpty, !seenSSIDs.contains(ssid) else {
+                        continue
+                    }
+                    seenSSIDs.insert(ssid)
+
+                    let wifiNetwork = WiFiNetwork(
+                        ssid: ssid,
+                        rssi: network.rssiValue,
+                        isSecure: network.supportsSecurity(.wpaPersonal) ||
+                                  network.supportsSecurity(.wpa2Personal) ||
+                                  network.supportsSecurity(.wpa3Personal) ||
+                                  network.supportsSecurity(.dynamicWEP),
+                        isConnected: ssid == currentSSID
+                    )
+                    networkList.append(wifiNetwork)
+                }
+
+                // Sort: connected first, then by signal strength
+                networkList.sort { lhs, rhs in
+                    if lhs.isConnected != rhs.isConnected {
+                        return lhs.isConnected
+                    }
+                    return lhs.rssi > rhs.rssi
+                }
+
+                DispatchQueue.main.async {
+                    self.availableNetworks = networkList
+                    self.isScanning = false
+                }
+            } catch {
+                print("Failed to scan for networks: \(error)")
+                DispatchQueue.main.async {
+                    self.isScanning = false
+                }
+            }
+        }
+    }
+
+    /// Connect to a WiFi network
+    func connectToNetwork(_ network: WiFiNetwork, password: String? = nil) {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let client = CWWiFiClient.shared()
+            guard let interface = client.interface() else { return }
+
+            do {
+                let networks = try interface.scanForNetworks(withSSID: network.ssid.data(using: .utf8))
+                guard let targetNetwork = networks.first else { return }
+
+                try interface.associate(to: targetNetwork, password: password)
+
+                DispatchQueue.main.async {
+                    self?.updateWiFiInfo()
+                    self?.scanForNetworks()
+                }
+            } catch {
+                print("Failed to connect to network: \(error)")
+            }
+        }
+    }
+
+    /// Open WiFi settings in System Preferences
+    func openWiFiSettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.Network-Settings.extension") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    /// Check WiFi power state
+    private func checkWiFiPowerState() {
+        let client = CWWiFiClient.shared()
+        if let interface = client.interface() {
+            isWiFiEnabled = interface.powerOn()
+        }
     }
 }
