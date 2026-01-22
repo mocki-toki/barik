@@ -1,24 +1,21 @@
-**NOTICE**: Unfortunately, I don’t have much free time to actively maintain this project. If you like the project but are not satisfied with its current state, you can explore the many forks or create your own. Even if you’re unfamiliar with **Swift**, tools like **Claude Code** and **Codex** can effectively help implement projects like this. This is a great opportunity to tailor **barik** to your needs and make it exactly the way you’d like.
-
-----
-
 <p align="center" dir="auto">
-  <img src="resources/header-image.png" alt="Barik"">
-  <p align="center" dir="auto">
-    <a href="LICENSE">
-      <img alt="License Badge" src="https://img.shields.io/github/license/mocki-toki/barik.svg?color=green" style="max-width: 100%;">
-    </a>
-    <a href="https://github.com/mocki-toki/barik/issues">
-      <img alt="Issues Badge" src="https://img.shields.io/github/issues/mocki-toki/barik.svg?color=green" style="max-width: 100%;">
-    </a>
-    <a href="CHANGELOG.md">
-      <img alt="Changelog Badge" src="https://img.shields.io/badge/view-changelog-green.svg" style="max-width: 100%;">
-    </a>
-    <a href="https://github.com/mocki-toki/barik/releases">
-      <img alt="GitHub Downloads (all assets, all releases)" src="https://img.shields.io/github/downloads/mocki-toki/barik/total">
-    </a>
-  </p>
+  <img src="resources/header-image.png" alt="Barik">
 </p>
+
+# barik-but-better
+
+A fork of [barik](https://github.com/mocki-toki/barik) with active improvements and new features.
+
+## Improvements over barik
+
+- **Drastically reduced CPU usage** - Replaced polling with event-driven notifications for music playback and space changes
+- **Enhanced calendar popup** - Day view with event selection and detailed event information
+- **Click to open music player** - Click on album art, song title, or artist in the now playing popup to open Spotify or Apple Music
+- **Improved WiFi popup** - macOS-style controls and better network information
+- **New weather popup** - Hourly forecast using Open-Meteo API
+- **Fixed popup positioning** - Consistent popup positioning across all widgets
+
+---
 
 **barik** is a lightweight macOS menu bar replacement. If you use [**yabai**](https://github.com/koekeishiya/yabai) or [**AeroSpace**](https://github.com/nikitabobko/AeroSpace) for tiling WM, you can display the current space in a sleek macOS-style panel with smooth animations. This makes it easy to see which number to press to switch spaces.
 

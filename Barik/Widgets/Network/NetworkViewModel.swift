@@ -19,9 +19,31 @@ enum WifiSignalStrength: String {
     case unknown = "Unknown"
 }
 
+struct WiFiNetwork: Identifiable, Hashable {
+    let id = UUID()
+    let ssid: String
+    let rssi: Int
+    let isSecure: Bool
+    let isConnected: Bool
+
+    var signalBars: Int {
+        if rssi >= -50 { return 3 }
+        else if rssi >= -70 { return 2 }
+        else { return 1 }
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(ssid)
+    }
+
+    static func == (lhs: WiFiNetwork, rhs: WiFiNetwork) -> Bool {
+        lhs.ssid == rhs.ssid
+    }
+}
+
 /// Unified view model for monitoring network and Wi‑Fi status.
 final class NetworkStatusViewModel: NSObject, ObservableObject,
-    CLLocationManagerDelegate
+    CLLocationManagerDelegate, CWEventDelegate
 {
 
     // States for Wi‑Fi and Ethernet obtained via NWPathMonitor.
@@ -33,6 +55,11 @@ final class NetworkStatusViewModel: NSObject, ObservableObject,
     @Published var rssi: Int = 0
     @Published var noise: Int = 0
     @Published var channel: String = "N/A"
+
+    // WiFi control and scanning
+    @Published var isWiFiEnabled: Bool = true
+    @Published var availableNetworks: [WiFiNetwork] = []
+    @Published var isScanning: Bool = false
 
     /// Computed property for signal strength.
     var wifiSignalStrength: WifiSignalStrength {
@@ -54,11 +81,13 @@ final class NetworkStatusViewModel: NSObject, ObservableObject,
 
     private var timer: Timer?
     private let locationManager = CLLocationManager()
+    private var wifiClient: CWWiFiClient?
 
     override init() {
         super.init()
         locationManager.delegate = self
         locationManager.requestWhenInUseAuthorization()
+        checkWiFiPowerState()
         startNetworkMonitoring()
         startWiFiMonitoring()
     }
@@ -125,16 +154,61 @@ final class NetworkStatusViewModel: NSObject, ObservableObject,
     // MARK: — Updating Wi‑Fi information via CoreWLAN.
 
     private func startWiFiMonitoring() {
-        timer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) {
-            [weak self] _ in
-            self?.updateWiFiInfo()
+        // Set up CWWiFiClient delegate for event-based SSID and link changes
+        wifiClient = CWWiFiClient.shared()
+        wifiClient?.delegate = self
+        do {
+            try wifiClient?.startMonitoringEvent(with: .ssidDidChange)
+            try wifiClient?.startMonitoringEvent(with: .linkDidChange)
+        } catch {
+            print("Failed to start WiFi event monitoring: \(error)")
         }
+
+        // Initial update
         updateWiFiInfo()
+
+        // Reduced polling (30 seconds) for signal strength updates only when connected
+        // RSSI has no event API, so we need polling for signal strength
+        startSignalStrengthPolling()
     }
 
     private func stopWiFiMonitoring() {
         timer?.invalidate()
         timer = nil
+
+        // Stop monitoring WiFi events
+        do {
+            try wifiClient?.stopMonitoringEvent(with: .ssidDidChange)
+            try wifiClient?.stopMonitoringEvent(with: .linkDidChange)
+        } catch {
+            print("Failed to stop WiFi event monitoring: \(error)")
+        }
+        wifiClient?.delegate = nil
+        wifiClient = nil
+    }
+
+    /// Start reduced polling for signal strength (RSSI) updates.
+    /// Only polls when WiFi is connected since RSSI has no event API.
+    private func startSignalStrengthPolling() {
+        timer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) {
+            [weak self] _ in
+            guard let self = self else { return }
+            // Only poll for signal strength when WiFi is connected
+            if self.wifiState == .connected || self.wifiState == .connectedWithoutInternet {
+                self.updateSignalStrength()
+            }
+        }
+    }
+
+    /// Update only signal strength (RSSI and noise) - used for polling
+    private func updateSignalStrength() {
+        let client = CWWiFiClient.shared()
+        if let interface = client.interface(), interface.ssid() != nil {
+            DispatchQueue.main.async {
+                self.rssi = interface.rssiValue()
+                self.noise = interface.noiseMeasurement()
+            }
+        }
     }
 
     private func updateWiFiInfo() {
@@ -170,6 +244,23 @@ final class NetworkStatusViewModel: NSObject, ObservableObject,
         }
     }
 
+    // MARK: — CWEventDelegate
+
+    /// Called when SSID changes (connecting to different network)
+    func ssidDidChangeForWiFiInterface(withName interfaceName: String) {
+        DispatchQueue.main.async {
+            self.updateWiFiInfo()
+        }
+    }
+
+    /// Called when link state changes (connected/disconnected)
+    func linkDidChangeForWiFiInterface(withName interfaceName: String) {
+        DispatchQueue.main.async {
+            self.updateWiFiInfo()
+            self.checkWiFiPowerState()
+        }
+    }
+
     // MARK: — CLLocationManagerDelegate.
 
     func locationManager(
@@ -177,5 +268,129 @@ final class NetworkStatusViewModel: NSObject, ObservableObject,
         didChangeAuthorization status: CLAuthorizationStatus
     ) {
         updateWiFiInfo()
+    }
+
+    // MARK: — WiFi Control Methods
+
+    /// Toggle WiFi on/off
+    func toggleWiFi() {
+        let client = CWWiFiClient.shared()
+        guard let interface = client.interface() else { return }
+
+        do {
+            let newState = !isWiFiEnabled
+            try interface.setPower(newState)
+            DispatchQueue.main.async {
+                self.isWiFiEnabled = newState
+                if !newState {
+                    self.ssid = "Not connected"
+                    self.availableNetworks = []
+                } else {
+                    self.updateWiFiInfo()
+                    self.scanForNetworks()
+                }
+            }
+        } catch {
+            print("Failed to toggle WiFi: \(error)")
+        }
+    }
+
+    /// Scan for available WiFi networks
+    func scanForNetworks() {
+        guard isWiFiEnabled else { return }
+
+        isScanning = true
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self = self else { return }
+
+            let client = CWWiFiClient.shared()
+            guard let interface = client.interface() else {
+                DispatchQueue.main.async {
+                    self.isScanning = false
+                }
+                return
+            }
+
+            do {
+                let networks = try interface.scanForNetworks(withSSID: nil)
+                let currentSSID = interface.ssid()
+
+                var networkList: [WiFiNetwork] = []
+                var seenSSIDs = Set<String>()
+
+                for network in networks {
+                    guard let ssid = network.ssid, !ssid.isEmpty, !seenSSIDs.contains(ssid) else {
+                        continue
+                    }
+                    seenSSIDs.insert(ssid)
+
+                    let wifiNetwork = WiFiNetwork(
+                        ssid: ssid,
+                        rssi: network.rssiValue,
+                        isSecure: network.supportsSecurity(.wpaPersonal) ||
+                                  network.supportsSecurity(.wpa2Personal) ||
+                                  network.supportsSecurity(.wpa3Personal) ||
+                                  network.supportsSecurity(.dynamicWEP),
+                        isConnected: ssid == currentSSID
+                    )
+                    networkList.append(wifiNetwork)
+                }
+
+                // Sort: connected first, then by signal strength
+                networkList.sort { lhs, rhs in
+                    if lhs.isConnected != rhs.isConnected {
+                        return lhs.isConnected
+                    }
+                    return lhs.rssi > rhs.rssi
+                }
+
+                DispatchQueue.main.async {
+                    self.availableNetworks = networkList
+                    self.isScanning = false
+                }
+            } catch {
+                print("Failed to scan for networks: \(error)")
+                DispatchQueue.main.async {
+                    self.isScanning = false
+                }
+            }
+        }
+    }
+
+    /// Connect to a WiFi network
+    func connectToNetwork(_ network: WiFiNetwork, password: String? = nil) {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let client = CWWiFiClient.shared()
+            guard let interface = client.interface() else { return }
+
+            do {
+                let networks = try interface.scanForNetworks(withSSID: network.ssid.data(using: .utf8))
+                guard let targetNetwork = networks.first else { return }
+
+                try interface.associate(to: targetNetwork, password: password)
+
+                DispatchQueue.main.async {
+                    self?.updateWiFiInfo()
+                    self?.scanForNetworks()
+                }
+            } catch {
+                print("Failed to connect to network: \(error)")
+            }
+        }
+    }
+
+    /// Open WiFi settings in System Preferences
+    func openWiFiSettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.Network-Settings.extension") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    /// Check WiFi power state
+    private func checkWiFiPowerState() {
+        let client = CWWiFiClient.shared()
+        if let interface = client.interface() {
+            isWiFiEnabled = interface.powerOn()
+        }
     }
 }
