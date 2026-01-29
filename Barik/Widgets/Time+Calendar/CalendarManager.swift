@@ -3,15 +3,23 @@ import EventKit
 import Foundation
 
 class CalendarManager: ObservableObject {
-    let configProvider: ConfigProvider
-    var config: ConfigData? {
-        configProvider.config["calendar"]?.dictionaryValue
+    static let shared = CalendarManager()
+
+    private var config: ConfigData? {
+        ConfigManager.shared.config.rootToml.widgets
+            .config(for: "default.time")?["calendar"]?.dictionaryValue
     }
+
+    private var showEvents: Bool {
+        config?["show-events"]?.boolValue ?? true
+    }
+
     var allowList: [String] {
         Array(
             (config?["allow-list"]?.arrayValue?.map { $0.stringValue ?? "" }
                 .drop(while: { $0 == "" })) ?? [])
     }
+
     var denyList: [String] {
         Array(
             (config?["deny-list"]?.arrayValue?.map { $0.stringValue ?? "" }
@@ -23,27 +31,57 @@ class CalendarManager: ObservableObject {
     @Published var tomorrowsEvents: [EKEvent] = []
     private let eventStore = EKEventStore()
     private var timer: Timer?
+    private var hasAccess = false
 
-    init(configProvider: ConfigProvider) {
-        self.configProvider = configProvider
-        requestAccess()
-        startMonitoring()
+    private init() {
+        // Listen for config changes to enable/disable monitoring
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(configDidChange),
+            name: Notification.Name("ConfigDidChange"),
+            object: nil)
+
+        // Only start if enabled
+        if showEvents {
+            requestAccess()
+            startMonitoring()
+        }
     }
 
     deinit {
         stopMonitoring()
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    @objc private func configDidChange() {
+        if showEvents && timer == nil {
+            requestAccess()
+            startMonitoring()
+        } else if !showEvents && timer != nil {
+            stopMonitoring()
+            // Clear events when disabled
+            DispatchQueue.main.async {
+                self.nextEvent = nil
+                self.todaysEvents = []
+                self.tomorrowsEvents = []
+            }
+        }
     }
 
     private func startMonitoring() {
+        guard timer == nil else { return }
         timer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) {
             [weak self] _ in
-            self?.fetchTodaysEvents()
-            self?.fetchTomorrowsEvents()
-            self?.fetchNextEvent()
+            guard let self = self, self.hasAccess else { return }
+            self.fetchTodaysEvents()
+            self.fetchTomorrowsEvents()
+            self.fetchNextEvent()
         }
-        fetchTodaysEvents()
-        fetchTomorrowsEvents()
-        fetchNextEvent()
+        if hasAccess {
+            fetchTodaysEvents()
+            fetchTomorrowsEvents()
+            fetchNextEvent()
+        }
     }
 
     private func stopMonitoring() {
@@ -53,13 +91,12 @@ class CalendarManager: ObservableObject {
 
     private func requestAccess() {
         eventStore.requestFullAccessToEvents { [weak self] granted, error in
-            if granted && error == nil {
-                self?.fetchTodaysEvents()
-                self?.fetchTomorrowsEvents()
-                self?.fetchNextEvent()
-            } else {
-                print(
-                    "Calendar access not granted: \(String(describing: error))")
+            guard let self = self else { return }
+            self.hasAccess = granted && error == nil
+            if self.hasAccess {
+                self.fetchTodaysEvents()
+                self.fetchTomorrowsEvents()
+                self.fetchNextEvent()
             }
         }
     }
@@ -76,6 +113,7 @@ class CalendarManager: ObservableObject {
     }
 
     func fetchNextEvent() {
+        guard hasAccess else { return }
         let calendars = eventStore.calendars(for: .event)
         let now = Date()
         let calendar = Calendar.current
@@ -83,7 +121,6 @@ class CalendarManager: ObservableObject {
             let endOfDay = calendar.date(
                 bySettingHour: 23, minute: 59, second: 59, of: now)
         else {
-            print("Failed to get end of day.")
             return
         }
         let predicate = eventStore.predicateForEvents(
@@ -100,6 +137,7 @@ class CalendarManager: ObservableObject {
     }
 
     func fetchTodaysEvents() {
+        guard hasAccess else { return }
         let calendars = eventStore.calendars(for: .event)
         let now = Date()
         let calendar = Calendar.current
@@ -108,7 +146,6 @@ class CalendarManager: ObservableObject {
             let endOfDay = calendar.date(
                 bySettingHour: 23, minute: 59, second: 59, of: now)
         else {
-            print("Failed to get end of day.")
             return
         }
         let predicate = eventStore.predicateForEvents(
@@ -123,6 +160,7 @@ class CalendarManager: ObservableObject {
     }
 
     func fetchTomorrowsEvents() {
+        guard hasAccess else { return }
         let calendars = eventStore.calendars(for: .event)
         let now = Date()
         let calendar = Calendar.current
@@ -133,7 +171,6 @@ class CalendarManager: ObservableObject {
             let endOfTomorrow = calendar.date(
                 bySettingHour: 23, minute: 59, second: 59, of: startOfTomorrow)
         else {
-            print("Failed to get tomorrow's date range.")
             return
         }
         let predicate = eventStore.predicateForEvents(

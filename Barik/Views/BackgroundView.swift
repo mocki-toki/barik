@@ -11,25 +11,33 @@ struct BackgroundView: View {
             default: return nil
             }
         }()
-        
+
         let height = configManager.config.experimental.background.resolveHeight()
-        
+
         return Color.clear
             .frame(height: height ?? geometry.size.height)
+            .frame(maxWidth: .infinity)
             .preferredColorScheme(theme)
-        
     }
-    
+
     var body: some View {
+        let position = configManager.config.experimental.foreground.position
+        let alignment: Alignment = switch position {
+        case .top: .top
+        case .bottom: .bottom
+        }
+
         if configManager.config.experimental.background.displayed {
             GeometryReader { geometry in
                 if configManager.config.experimental.background.black {
                     spacer(geometry)
                         .background(.black)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: alignment)
                         .id("black")
                 } else {
                     spacer(geometry)
                         .background(configManager.config.experimental.background.blur)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: alignment)
                         .id("blur")
                 }
             }

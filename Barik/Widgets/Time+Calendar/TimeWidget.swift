@@ -97,10 +97,9 @@ struct TimeWidget: View {
 struct TimeWidget_Previews: PreviewProvider {
     static var previews: some View {
         let provider = ConfigProvider(config: ConfigData())
-        let manager = CalendarManager(configProvider: provider)
 
         ZStack {
-            TimeWidget(calendarManager: manager)
+            TimeWidget(calendarManager: CalendarManager.shared)
                 .environmentObject(provider)
         }.frame(width: 500, height: 100)
     }

@@ -19,7 +19,7 @@ struct VersionChecker {
     static func isLatestVersion() -> Bool {
         guard let current = currentVersion,
               let url = versionFileURL,
-              let savedVersion = try? String(contentsOf: url) else {
+              let savedVersion = try? String(contentsOf: url, encoding: .utf8) else {
             return false
         }
         return savedVersion == current

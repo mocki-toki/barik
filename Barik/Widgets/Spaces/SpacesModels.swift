@@ -49,14 +49,18 @@ struct AnySpace: Identifiable, Equatable {
     let id: String
     let isFocused: Bool
     let windows: [AnyWindow]
+    let monitor: String?
 
     init<S: SpaceModel>(_ space: S) {
         if let aero = space as? AeroSpace {
             self.id = aero.workspace
+            self.monitor = aero.monitor
         } else if let yabai = space as? YabaiSpace {
             self.id = String(yabai.id)
+            self.monitor = nil
         } else {
             self.id = "0"
+            self.monitor = nil
         }
         self.isFocused = space.isFocused
         self.windows = space.windows.map { AnyWindow($0) }
@@ -64,7 +68,7 @@ struct AnySpace: Identifiable, Equatable {
 
     static func == (lhs: AnySpace, rhs: AnySpace) -> Bool {
         return lhs.id == rhs.id && lhs.isFocused == rhs.isFocused
-            && lhs.windows == rhs.windows
+            && lhs.windows == rhs.windows && lhs.monitor == rhs.monitor
     }
 }
 

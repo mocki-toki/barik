@@ -6,8 +6,10 @@ class SpacesViewModel: ObservableObject {
     @Published var spaces: [AnySpace] = []
     private var timer: Timer?
     private var provider: AnySpacesProvider?
+    var monitorName: String?
 
-    init() {
+    init(monitorName: String? = nil) {
+        self.monitorName = monitorName
         let runningApps = NSWorkspace.shared.runningApplications.compactMap {
             $0.localizedName?.lowercased()
         }
@@ -49,8 +51,12 @@ class SpacesViewModel: ObservableObject {
                 return
             }
             let sortedSpaces = spaces.sorted { $0.id < $1.id }
+            var filteredSpaces = sortedSpaces
+            if let monitor = self.monitorName {
+                filteredSpaces = sortedSpaces.filter { $0.monitor == monitor }
+            }
             DispatchQueue.main.async {
-                self.spaces = sortedSpaces
+                self.spaces = filteredSpaces
             }
         }
     }

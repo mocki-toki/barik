@@ -68,7 +68,8 @@ class AerospaceSpacesProvider: SpacesProvider, SwitchableSpacesProvider {
     private func fetchSpaces() -> [AeroSpace]? {
         guard
             let data = runAerospaceCommand(arguments: [
-                "list-workspaces", "--all", "--json",
+                "list-workspaces", "--all", "--json", "--format",
+                "%{workspace} %{monitor-name}",
             ])
         else {
             return nil

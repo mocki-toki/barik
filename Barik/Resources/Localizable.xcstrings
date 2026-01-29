@@ -1,11 +1,30 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
+
+    },
     "?%@?" : {
       "shouldTranslate" : false
     },
+    "%@: %lld%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$lld%3$@"
+          }
+        }
+      }
+    },
     "%lld" : {
       "shouldTranslate" : false
+    },
+    "~/.barik-config.toml" : {
+
+    },
+    "AeroSpace path" : {
+
     },
     "ALL_DAY" : {
       "extractionState" : "manual",
@@ -132,6 +151,18 @@
         }
       }
     },
+    "Auto-detect" : {
+
+    },
+    "Blur: %lld" : {
+
+    },
+    "Bottom" : {
+
+    },
+    "Box" : {
+
+    },
     "Channel: %@" : {
       "localizations" : {
         "ar" : {
@@ -255,6 +286,9 @@
           }
         }
       }
+    },
+    "Dark" : {
+
     },
     "EMPTY_EVENTS" : {
       "extractionState" : "manual",
@@ -505,6 +539,18 @@
         }
       }
     },
+    "Horizontal" : {
+
+    },
+    "Horizontal padding: %lldpx" : {
+
+    },
+    "Leave empty for auto-detection" : {
+
+    },
+    "Light" : {
+
+    },
     "Noise: %lld" : {
       "localizations" : {
         "ar" : {
@@ -628,6 +674,15 @@
           }
         }
       }
+    },
+    "Open Config File" : {
+
+    },
+    "Popup style" : {
+
+    },
+    "Position" : {
+
     },
     "RSSI: %lld" : {
       "localizations" : {
@@ -753,6 +808,24 @@
         }
       }
     },
+    "Show background panel" : {
+
+    },
+    "Show calendar events" : {
+
+    },
+    "Show percentage" : {
+
+    },
+    "Show space key" : {
+
+    },
+    "Show widget backgrounds" : {
+
+    },
+    "Show window title" : {
+
+    },
     "Signal strength: %@" : {
       "localizations" : {
         "ar" : {
@@ -876,6 +949,12 @@
           }
         }
       }
+    },
+    "System" : {
+
+    },
+    "Theme" : {
+
     },
     "TODAY" : {
       "extractionState" : "manual",
@@ -1126,6 +1205,9 @@
           }
         }
       }
+    },
+    "Top" : {
+
     },
     "Update" : {
       "localizations" : {
@@ -1499,6 +1581,9 @@
         }
       }
     },
+    "Vertical" : {
+
+    },
     "What's new" : {
       "localizations" : {
         "ar" : {
@@ -1622,6 +1707,12 @@
           }
         }
       }
+    },
+    "Widget spacing: %lldpx" : {
+
+    },
+    "Yabai path" : {
+
     }
   },
   "version" : "1.0"

@@ -2,6 +2,8 @@
 
 ## 0.5.x
 
+- Multi-screen support: bar displays on all monitors with per-display workspaces
+- Auto-configure AeroSpace/Yabai gaps per-monitor to respect Barik's space
 - Added MediaRemote adapter for universal media detection (works with any media app, not just Apple Music/Spotify)
 - Now Playing widget now uses notification-based updates instead of polling (more efficient)
 - Fixed JSON number parsing for track identifiers
@@ -41,7 +43,7 @@ blur = 3                                     # background type: from 1 to 6 for 
 
 **Popup** — a new feature that allows opening an extended and interactive view of a widget (e.g., the battery charge indicator widget) by clicking on it. Currently, popups are available for the following **barik** widgets: Now Playing, Network, Battery, and Time (Calendar).
 
-We want to make **barik** more useful, powerful, and convenient, so feel free to share your ideas in [Issues](https://github.com/mocki-toki/barik/issues/new), and contribute your work through [Pull Requests](https://github.com/mocki-toki/barik/pulls). We’ll definitely review everything!
+We want to make **barik** more useful, powerful, and convenient, so feel free to share your ideas in [Issues](https://github.com/mocki-toki/barik/issues/new), and contribute your work through [Pull Requests](https://github.com/mocki-toki/barik/pulls). We'll definitely review everything!
 
 Other changes:
 

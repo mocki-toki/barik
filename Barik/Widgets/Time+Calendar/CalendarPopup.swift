@@ -358,26 +358,16 @@ private struct EventRow: View {
 }
 
 struct CalendarPopup_Previews: PreviewProvider {
-    var configProvider: ConfigProvider = ConfigProvider(config: ConfigData())
-    var calendarManager: CalendarManager
-
-    init() {
-        self.calendarManager = CalendarManager(configProvider: configProvider)
-    }
-
     static var previews: some View {
-        let configProvider = ConfigProvider(config: ConfigData())
-        let calendarManager = CalendarManager(configProvider: configProvider)
-
         CalendarBoxPopup()
             .background(Color.black)
             .previewLayout(.sizeThatFits)
             .previewDisplayName("Box")
-        CalendarVerticalPopup(calendarManager)
+        CalendarVerticalPopup(CalendarManager.shared)
             .background(Color.black)
             .frame(height: 600)
             .previewDisplayName("Vertical")
-        CalendarHorizontalPopup(calendarManager)
+        CalendarHorizontalPopup(CalendarManager.shared)
             .background(Color.black)
             .previewLayout(.sizeThatFits)
             .previewDisplayName("Horizontal")

@@ -1,7 +1,12 @@
 import SwiftUI
 
 struct MenuBarView: View {
+    let monitorName: String?
     @ObservedObject var configManager = ConfigManager.shared
+
+    init(monitorName: String? = nil) {
+        self.monitorName = monitorName
+    }
 
     var body: some View {
         let theme: ColorScheme? =
@@ -14,7 +19,21 @@ struct MenuBarView: View {
                 .none
             }
 
-        let items = configManager.config.rootToml.widgets.displayed
+        let position = configManager.config.experimental.foreground.position
+        let padding = configManager.config.experimental.foreground.horizontalPadding
+
+        // Hide system widgets when bar is at bottom (already in macOS top menu bar)
+        let systemWidgetsToHide: Set<String> = position == .bottom
+            ? ["default.network", "default.battery", "default.time"]
+            : []
+        let items = configManager.config.rootToml.widgets.displayed.filter {
+            !systemWidgetsToHide.contains($0.id)
+        }
+
+        let alignment: Alignment = switch position {
+        case .top: .top
+        case .bottom: .bottom
+        }
 
         HStack(spacing: 0) {
             HStack(spacing: configManager.config.experimental.foreground.spacing) {
@@ -30,8 +49,8 @@ struct MenuBarView: View {
         }
         .foregroundStyle(Color.foregroundOutside)
         .frame(height: max(configManager.config.experimental.foreground.resolveHeight(), 1.0))
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, configManager.config.experimental.foreground.horizontalPadding)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: alignment)
+        .padding(.horizontal, padding)
         .background(.black.opacity(0.001))
         .preferredColorScheme(theme)
     }
@@ -43,7 +62,7 @@ struct MenuBarView: View {
 
         switch item.id {
         case "default.spaces":
-            SpacesWidget().environmentObject(config)
+            SpacesWidget(monitorName: monitorName).environmentObject(config)
 
         case "default.network":
             NetworkWidget().environmentObject(config)
@@ -52,7 +71,7 @@ struct MenuBarView: View {
             BatteryWidget().environmentObject(config)
 
         case "default.time":
-            TimeWidget(calendarManager: CalendarManager(configProvider: config))
+            TimeWidget(calendarManager: CalendarManager.shared)
                 .environmentObject(config)
             
         case "default.nowplaying":
@@ -70,6 +89,9 @@ struct MenuBarView: View {
 
         case "system-banner":
             SystemBannerWidget()
+
+        case "default.settings":
+            SettingsWidget()
 
         default:
             Text("?\(item.id)?").foregroundColor(.red)

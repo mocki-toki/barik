@@ -32,22 +32,26 @@ struct AeroWindow: WindowModel {
 struct AeroSpace: SpaceModel {
     typealias WindowType = AeroWindow
     let workspace: String
+    let monitor: String?
     var id: String { workspace }
     var isFocused: Bool = false
     var windows: [AeroWindow] = []
 
     enum CodingKeys: String, CodingKey {
         case workspace
+        case monitor = "monitor-name"
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         workspace = try container.decode(String.self, forKey: .workspace)
+        monitor = try container.decodeIfPresent(String.self, forKey: .monitor)
     }
 
-    init(workspace: String, isFocused: Bool = false, windows: [AeroWindow] = [])
+    init(workspace: String, monitor: String? = nil, isFocused: Bool = false, windows: [AeroWindow] = [])
     {
         self.workspace = workspace
+        self.monitor = monitor
         self.isFocused = isFocused
         self.windows = windows
     }

@@ -268,32 +268,40 @@ struct ExperimentalConfig: Decodable {
 
 struct ForegroundConfig: Decodable {
     let height: BackgroundForegroundHeight
+    let width: BackgroundForegroundHeight
+    let position: BarPosition
     let horizontalPadding: CGFloat
     let widgetsBackground: WidgetBackgroundConfig
     let spacing: CGFloat
-    
+
     init() {
         self.height = .barikDefault
+        self.width = .barikDefault
+        self.position = .top
         self.horizontalPadding = Constants.menuBarHorizontalPadding
         self.widgetsBackground = WidgetBackgroundConfig()
         self.spacing = 15
     }
-    
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         height = try container.decodeIfPresent(BackgroundForegroundHeight.self, forKey: .height) ?? .barikDefault
+        width = try container.decodeIfPresent(BackgroundForegroundHeight.self, forKey: .width) ?? .barikDefault
+        position = try container.decodeIfPresent(BarPosition.self, forKey: .position) ?? .top
         horizontalPadding = try container.decodeIfPresent(CGFloat.self, forKey: .horizontalPadding) ?? Constants.menuBarHorizontalPadding
         widgetsBackground = try container.decodeIfPresent(WidgetBackgroundConfig.self, forKey: .widgetsBackground) ?? WidgetBackgroundConfig()
         spacing = try container.decodeIfPresent(CGFloat.self, forKey: .spacing) ?? 15
     }
-    
+
     enum CodingKeys: String, CodingKey {
         case height
+        case width
+        case position
         case horizontalPadding = "horizontal-padding"
         case widgetsBackground = "widgets-background"
         case spacing
     }
-    
+
     func resolveHeight() -> CGFloat {
         switch height {
         case .barikDefault:
@@ -304,29 +312,43 @@ struct ForegroundConfig: Decodable {
             return CGFloat(value)
         }
     }
+
+    func resolveWidth() -> CGFloat {
+        switch width {
+        case .barikDefault:
+            return CGFloat(Constants.menuBarWidth)
+        case .menuBar:
+            return CGFloat(Constants.menuBarWidth)
+        case .float(let value):
+            return CGFloat(value)
+        }
+    }
 }
 
 struct WidgetBackgroundConfig: Decodable {
     let displayed: Bool
     let blur: Material
-    
+    let blurRaw: Int
+
     init() {
         self.displayed = false
         self.blur = .regular
+        self.blurRaw = 3
     }
-    
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        
+
         displayed = try container.decodeIfPresent(Bool.self, forKey: .displayed) ?? false
-        
-        var materialIndex = try container.decodeIfPresent(Int.self, forKey: .blur) ?? 1
+
+        var materialIndex = try container.decodeIfPresent(Int.self, forKey: .blur) ?? 3
         if materialIndex < 1 {
             materialIndex = 1
         } else if materialIndex > 6 {
             materialIndex = 6
         }
-        
+
+        blurRaw = materialIndex
         blur = [.ultraThin, .thin, .regular, .thick, .ultraThick, .bar][materialIndex - 1]
     }
 
@@ -339,27 +361,30 @@ struct BackgroundConfig: Decodable {
     let displayed: Bool
     let height: BackgroundForegroundHeight
     let blur: Material
+    let blurRaw: Int
     let black: Bool
 
     init() {
         self.displayed = true
         self.height = .barikDefault
         self.blur = .regular
+        self.blurRaw = 3
         self.black = false
     }
-    
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         displayed = try container.decodeIfPresent(Bool.self, forKey: .displayed) ?? true
         height = try container.decodeIfPresent(BackgroundForegroundHeight.self, forKey: .height) ?? .barikDefault
-        
-        var materialIndex = try container.decodeIfPresent(Int.self, forKey: .blur) ?? 1
+
+        var materialIndex = try container.decodeIfPresent(Int.self, forKey: .blur) ?? 3
         if materialIndex < 1 {
             materialIndex = 1
         } else if materialIndex > 7 {
             materialIndex = 7
         }
-        
+
+        blurRaw = materialIndex
         blur = [.ultraThin, .thin, .regular, .thick, .ultraThick, .bar, .bar][materialIndex - 1]
         self.black = materialIndex == 7
     }
@@ -402,6 +427,10 @@ enum ForegroundPadding: Decodable {
             )
         )
     }
+}
+
+enum BarPosition: String, Decodable {
+    case top, bottom
 }
 
 enum BackgroundForegroundHeight: Decodable {

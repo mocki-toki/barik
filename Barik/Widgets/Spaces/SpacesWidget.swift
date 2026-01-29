@@ -1,10 +1,16 @@
 import SwiftUI
 
 struct SpacesWidget: View {
-    @StateObject var viewModel = SpacesViewModel()
+    let monitorName: String?
+    @StateObject var viewModel: SpacesViewModel
 
     @ObservedObject var configManager = ConfigManager.shared
     var foregroundHeight: CGFloat { configManager.config.experimental.foreground.resolveHeight() }
+
+    init(monitorName: String? = nil) {
+        self.monitorName = monitorName
+        _viewModel = StateObject(wrappedValue: SpacesViewModel(monitorName: monitorName))
+    }
 
     var body: some View {
         HStack(spacing: foregroundHeight < 30 ? 0 : 8) {
@@ -38,6 +44,7 @@ private struct SpaceView: View {
 
     var body: some View {
         let isFocused = space.windows.contains { $0.isFocused } || space.isFocused
+
         HStack(spacing: 0) {
             Spacer().frame(width: 10)
             if showKey {
