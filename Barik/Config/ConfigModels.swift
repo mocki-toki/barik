@@ -113,16 +113,19 @@ struct WidgetsSection: Decodable {
     }
 }
 
-struct TomlWidgetItem: Decodable {
+struct TomlWidgetItem: Decodable, Equatable, Hashable {
+    let instanceID: UUID
     let id: String
     let inlineParams: ConfigData
 
     init(id: String, inlineParams: ConfigData) {
+        self.instanceID = UUID()
         self.id = id
         self.inlineParams = inlineParams
     }
 
     init(from decoder: Decoder) throws {
+        self.instanceID = UUID()
         let container = try decoder.singleValueContainer()
 
         if let strValue = try? container.decode(String.self) {
@@ -148,9 +151,34 @@ struct TomlWidgetItem: Decodable {
         self.id = widgetId
         self.inlineParams = params
     }
+
+    static func == (lhs: TomlWidgetItem, rhs: TomlWidgetItem) -> Bool {
+        lhs.instanceID == rhs.instanceID
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(instanceID)
+    }
+
+    func toTomlString() -> String {
+        if inlineParams.isEmpty {
+            return "\"\(id)\""
+        }
+        let paramsString = inlineParams.map { key, value in
+            "\(key) = \(value.toTomlValueString())"
+        }.joined(separator: ", ")
+        return "{ \"\(id)\" = { \(paramsString) } }"
+    }
 }
 
-enum TOMLValue: Decodable {
+extension Array where Element == TomlWidgetItem {
+    func toTomlDisplayedArray() -> String {
+        let items = self.map { "    \($0.toTomlString())" }.joined(separator: ",\n")
+        return "[\n\(items)\n]"
+    }
+}
+
+enum TOMLValue: Decodable, Equatable, Hashable {
     case string(String)
     case bool(Bool)
     case int(Int)
@@ -215,6 +243,22 @@ extension TOMLValue {
     var dictionaryValue: ConfigData? {
         if case let .dictionary(dict) = self { return dict }
         return nil
+    }
+
+    func toTomlValueString() -> String {
+        switch self {
+        case .string(let s): return "\"\(s)\""
+        case .bool(let b): return b ? "true" : "false"
+        case .int(let i): return "\(i)"
+        case .double(let d): return "\(d)"
+        case .array(let arr):
+            let inner = arr.map { $0.toTomlValueString() }.joined(separator: ", ")
+            return "[\(inner)]"
+        case .dictionary(let dict):
+            let inner = dict.map { "\($0.key) = \($0.value.toTomlValueString())" }.joined(separator: ", ")
+            return "{ \(inner) }"
+        case .null: return "\"\""
+        }
     }
 }
 

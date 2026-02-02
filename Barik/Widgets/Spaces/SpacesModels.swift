@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 
 protocol SpaceModel: Identifiable, Equatable, Codable {
     associatedtype WindowType: WindowModel
@@ -17,6 +18,23 @@ protocol WindowModel: Identifiable, Equatable, Codable {
 protocol SpacesProvider {
     associatedtype SpaceType: SpaceModel
     func getSpacesWithWindows() -> [SpaceType]?
+}
+
+// MARK: - Event-Based Provider Support
+
+enum SpaceEvent {
+    case initialState([AnySpace])
+    case focusChanged(String)
+    case windowsUpdated(String, [AnyWindow])
+    case spaceCreated(String)
+    case spaceDestroyed(String)
+}
+
+protocol EventBasedSpacesProvider {
+    var spacesPublisher: AnyPublisher<SpaceEvent, Never> { get }
+
+    func startObserving()
+    func stopObserving()
 }
 
 protocol SwitchableSpacesProvider: SpacesProvider {
@@ -62,6 +80,12 @@ struct AnySpace: Identifiable, Equatable {
         self.windows = space.windows.map { AnyWindow($0) }
     }
 
+    init(id: String, isFocused: Bool, windows: [AnyWindow]) {
+        self.id = id
+        self.isFocused = isFocused
+        self.windows = windows
+    }
+
     static func == (lhs: AnySpace, rhs: AnySpace) -> Bool {
         return lhs.id == rhs.id && lhs.isFocused == rhs.isFocused
             && lhs.windows == rhs.windows
@@ -73,10 +97,19 @@ class AnySpacesProvider {
     private let _focusSpace: ((String, Bool) -> Void)?
     private let _focusWindow: ((String) -> Void)?
 
+    private let _isEventBased: Bool
+    private let _startObserving: (() -> Void)?
+    private let _stopObserving: (() -> Void)?
+    private let _spacesPublisher: AnyPublisher<SpaceEvent, Never>?
+
+    var isEventBased: Bool { _isEventBased }
+    var spacesPublisher: AnyPublisher<SpaceEvent, Never>? { _spacesPublisher }
+
     init<P: SpacesProvider>(_ provider: P) {
         _getSpacesWithWindows = {
             provider.getSpacesWithWindows()?.map { AnySpace($0) }
         }
+
         if let switchable = provider as? any SwitchableSpacesProvider {
             _focusSpace = { spaceId, needWindowFocus in
                 switchable.focusSpace(
@@ -88,6 +121,18 @@ class AnySpacesProvider {
         } else {
             _focusSpace = nil
             _focusWindow = nil
+        }
+
+        if let eventBased = provider as? any EventBasedSpacesProvider {
+            _isEventBased = true
+            _startObserving = eventBased.startObserving
+            _stopObserving = eventBased.stopObserving
+            _spacesPublisher = eventBased.spacesPublisher
+        } else {
+            _isEventBased = false
+            _startObserving = nil
+            _stopObserving = nil
+            _spacesPublisher = nil
         }
     }
 
@@ -101,5 +146,13 @@ class AnySpacesProvider {
 
     func focusWindow(windowId: String) {
         _focusWindow?(windowId)
+    }
+
+    func startObserving() {
+        _startObserving?()
+    }
+
+    func stopObserving() {
+        _stopObserving?()
     }
 }
