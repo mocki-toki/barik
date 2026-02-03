@@ -1,0 +1,39 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Release
+        run: |
+          xcodebuild -scheme Barik -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Zip app
+        run: ditto -c -k --keepParent build/Build/Products/Release/Barik.app Barik.zip
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" build/Build/Products/Release/Barik.app/Contents/Info.plist)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Update latest release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete latest --yes 2>/dev/null || true
+          git push origin :refs/tags/latest 2>/dev/null || true
+          gh release create latest Barik.zip \
+            --title "Latest Build (v${{ steps.version.outputs.version }})" \
+            --notes "Automated build from \`main\` branch ($(date -u +%Y-%m-%d)).
+
+          Built from commit ${{ github.sha }}." \
+            --prerelease
