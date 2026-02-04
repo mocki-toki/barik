@@ -3,6 +3,8 @@ import SwiftUI
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var backgroundPanel: NSPanel?
     private var menuBarPanel: NSPanel?
+    private let contextMenu = MenuBarContextMenu()
+    private var eventMonitor: Any?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         if let error = ConfigManager.shared.initError {
@@ -21,6 +23,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         
         MenuBarPopup.setup()
         setupPanels()
+        setupContextMenuMonitor()
 
         NotificationCenter.default.addObserver(
             self,
@@ -72,6 +75,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel = newPanel
     }
     
+    private func setupContextMenuMonitor() {
+        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .rightMouseDown) {
+            [weak self] event in
+            guard let self,
+                  let panel = self.menuBarPanel,
+                  event.window === panel,
+                  let contentView = panel.contentView
+            else {
+                return event
+            }
+            let locationInView = contentView.convert(event.locationInWindow, from: nil)
+            self.contextMenu.popUp(
+                positioning: nil, at: locationInView, in: contentView)
+            return nil
+        }
+    }
+
     private func showFatalConfigError(message: String) {
         let alert = NSAlert()
         alert.messageText = "Configuration Error"

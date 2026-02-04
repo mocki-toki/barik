@@ -7,7 +7,7 @@ class BatteryManager: ObservableObject {
     @Published var batteryLevel: Int = 0
     @Published var isCharging: Bool = false
     @Published var isPluggedIn: Bool = false
-    private var timer: Timer?
+    private var runLoopSource: CFRunLoopSource?
 
     init() {
         startMonitoring()
@@ -18,17 +18,33 @@ class BatteryManager: ObservableObject {
     }
 
     private func startMonitoring() {
-        // Update every 1 second.
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) {
-            [weak self] _ in
-            self?.updateBatteryStatus()
+        let context = UnsafeMutableRawPointer(
+            Unmanaged.passUnretained(self).toOpaque())
+
+        runLoopSource = IOPSNotificationCreateRunLoopSource(
+            { context in
+                guard let context = context else { return }
+                let manager = Unmanaged<BatteryManager>.fromOpaque(context)
+                    .takeUnretainedValue()
+                DispatchQueue.main.async {
+                    manager.updateBatteryStatus()
+                }
+            },
+            context
+        )?.takeRetainedValue()
+
+        if let source = runLoopSource {
+            CFRunLoopAddSource(CFRunLoopGetCurrent(), source, .defaultMode)
         }
+
         updateBatteryStatus()
     }
 
     private func stopMonitoring() {
-        timer?.invalidate()
-        timer = nil
+        if let source = runLoopSource {
+            CFRunLoopRemoveSource(CFRunLoopGetCurrent(), source, .defaultMode)
+            runLoopSource = nil
+        }
     }
 
     /// This method updates the battery level and charging state.
