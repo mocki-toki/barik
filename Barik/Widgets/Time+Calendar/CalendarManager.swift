@@ -4,56 +4,98 @@ import Foundation
 
 class CalendarManager: ObservableObject {
     let configProvider: ConfigProvider
-    var config: ConfigData? {
-        configProvider.config["calendar"]?.dictionaryValue
+
+    // Read config directly from ConfigManager.shared to get latest values
+    private var calendarConfig: ConfigData? {
+        let widgetConfig = ConfigManager.shared.globalWidgetConfig(for: "default.time")
+        return widgetConfig["calendar"]?.dictionaryValue
     }
     var allowList: [String] {
         Array(
-            (config?["allow-list"]?.arrayValue?.map { $0.stringValue ?? "" }
+            (calendarConfig?["allow-list"]?.arrayValue?.map { $0.stringValue ?? "" }
                 .drop(while: { $0 == "" })) ?? [])
     }
     var denyList: [String] {
         Array(
-            (config?["deny-list"]?.arrayValue?.map { $0.stringValue ?? "" }
+            (calendarConfig?["deny-list"]?.arrayValue?.map { $0.stringValue ?? "" }
                 .drop(while: { $0 == "" })) ?? [])
     }
 
     @Published var nextEvent: EKEvent?
     @Published var todaysEvents: [EKEvent] = []
     @Published var tomorrowsEvents: [EKEvent] = []
-    private let eventStore = EKEventStore()
-    private var timer: Timer?
+    @Published var allCalendars: [EKCalendar] = []
+    let eventStore = EKEventStore()
+    private var debounceTimer: Timer?
+    private var configCancellable: AnyCancellable?
 
     init(configProvider: ConfigProvider) {
         self.configProvider = configProvider
         requestAccess()
         startMonitoring()
+
+        // Subscribe to ConfigManager.shared config changes to re-fetch events when deny-list changes
+        configCancellable = ConfigManager.shared.$config
+            .dropFirst()  // Skip initial value
+            .debounce(for: .milliseconds(100), scheduler: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.fetchTodaysEvents()
+                self?.fetchTomorrowsEvents()
+                self?.fetchNextEvent()
+            }
     }
 
     deinit {
         stopMonitoring()
+        configCancellable?.cancel()
     }
 
     private func startMonitoring() {
-        timer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) {
-            [weak self] _ in
-            self?.fetchTodaysEvents()
-            self?.fetchTomorrowsEvents()
-            self?.fetchNextEvent()
-        }
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleCalendarStoreChanged),
+            name: .EKEventStoreChanged,
+            object: eventStore
+        )
+        fetchAllCalendars()
         fetchTodaysEvents()
         fetchTomorrowsEvents()
         fetchNextEvent()
     }
 
+    func fetchAllCalendars() {
+        let calendars = eventStore.calendars(for: .event)
+            .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+        DispatchQueue.main.async {
+            self.allCalendars = calendars
+        }
+    }
+
     private func stopMonitoring() {
-        timer?.invalidate()
-        timer = nil
+        debounceTimer?.invalidate()
+        debounceTimer = nil
+        NotificationCenter.default.removeObserver(
+            self,
+            name: .EKEventStoreChanged,
+            object: eventStore
+        )
+    }
+
+    @objc private func handleCalendarStoreChanged() {
+        debounceTimer?.invalidate()
+        debounceTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) {
+            [weak self] _ in
+            self?.fetchAllCalendars()
+            self?.fetchTodaysEvents()
+            self?.fetchTomorrowsEvents()
+            self?.fetchNextEvent()
+        }
     }
 
     private func requestAccess() {
         eventStore.requestFullAccessToEvents { [weak self] granted, error in
             if granted && error == nil {
+                self?.fetchAllCalendars()
                 self?.fetchTodaysEvents()
                 self?.fetchTomorrowsEvents()
                 self?.fetchNextEvent()
@@ -67,10 +109,10 @@ class CalendarManager: ObservableObject {
     private func filterEvents(_ events: [EKEvent]) -> [EKEvent] {
         var filtered = events
         if !allowList.isEmpty {
-            filtered = filtered.filter { allowList.contains($0.calendar.title) }
+            filtered = filtered.filter { allowList.contains($0.calendar.calendarIdentifier) }
         }
         if !denyList.isEmpty {
-            filtered = filtered.filter { !denyList.contains($0.calendar.title) }
+            filtered = filtered.filter { !denyList.contains($0.calendar.calendarIdentifier) }
         }
         return filtered
     }
