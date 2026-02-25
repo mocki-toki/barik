@@ -1,24 +1,24 @@
-**NOTICE**: Unfortunately, I don’t have much free time to actively maintain this project. If you like the project but are not satisfied with its current state, you can explore the many forks or create your own. Even if you’re unfamiliar with **Swift**, tools like **Claude Code** and **Codex** can effectively help implement projects like this. This is a great opportunity to tailor **barik** to your needs and make it exactly the way you’d like.
-
-----
-
 <p align="center" dir="auto">
-  <img src="resources/header-image.png" alt="Barik"">
-  <p align="center" dir="auto">
-    <a href="LICENSE">
-      <img alt="License Badge" src="https://img.shields.io/github/license/mocki-toki/barik.svg?color=green" style="max-width: 100%;">
-    </a>
-    <a href="https://github.com/mocki-toki/barik/issues">
-      <img alt="Issues Badge" src="https://img.shields.io/github/issues/mocki-toki/barik.svg?color=green" style="max-width: 100%;">
-    </a>
-    <a href="CHANGELOG.md">
-      <img alt="Changelog Badge" src="https://img.shields.io/badge/view-changelog-green.svg" style="max-width: 100%;">
-    </a>
-    <a href="https://github.com/mocki-toki/barik/releases">
-      <img alt="GitHub Downloads (all assets, all releases)" src="https://img.shields.io/github/downloads/mocki-toki/barik/total">
-    </a>
-  </p>
+  <img src="resources/header-image.png" alt="Barik">
 </p>
+
+# barik-but-better
+
+A fork of [barik](https://github.com/mocki-toki/barik) with active improvements and new features.
+
+## Improvements over barik
+
+- **Drag-and-drop widget reordering** - Drag widgets directly in the menu bar to rearrange them, order persists to config
+- **Claude Code usage widget** - Track API usage in real-time with a donut ring indicator that changes color at thresholds, plus a popup with rolling window and weekly stats
+- **Pomodoro timer widget** - Built-in pomodoro timer with work/break/long break phases, circular progress ring, session tracking, adjustable durations, and macOS notifications
+- **Drastically reduced CPU usage** - Replaced polling with event-driven notifications for music playback and space changes
+- **Enhanced calendar popup** - Day view with event selection and detailed event information
+- **Click to open music player** - Click on album art, song title, or artist in the now playing popup to open Spotify or Apple Music
+- **Improved WiFi popup** - macOS-style controls and better network information
+- **New weather popup** - Hourly forecast using Open-Meteo API
+- **Fixed popup positioning** - Consistent popup positioning across all widgets
+
+---
 
 **barik** is a lightweight macOS menu bar replacement. If you use [**yabai**](https://github.com/koekeishiya/yabai) or [**AeroSpace**](https://github.com/nikitabobko/AeroSpace) for tiling WM, you can display the current space in a sleek macOS-style panel with smooth animations. This makes it easy to see which number to press to switch spaces.
 
@@ -45,23 +45,53 @@ https://github.com/user-attachments/assets/d3799e24-c077-4c6a-a7da-a1f2eee1a07f
 
 ## Quick Start
 
-1. Install **barik** via [Homebrew](https://brew.sh/)
+### Install via Homebrew
 
 ```sh
-brew install --cask mocki-toki/formulae/barik
+brew install --cask bettercoderthanyou/formulae/barik-but-better
 ```
 
-Or you can download from [Releases](https://github.com/mocki-toki/barik/releases), unzip it, and move it to your Applications folder.
+### Or build from source
 
-2. _(Optional)_ To display open applications and spaces, install [**yabai**](https://github.com/koekeishiya/yabai) or [**AeroSpace**](https://github.com/nikitabobko/AeroSpace) and set up hotkeys. For **yabai**, you'll need **skhd** or **Raycast scripts**. Don't forget to configure **top padding** — [here's an example for **yabai**](https://github.com/mocki-toki/barik/blob/main/example/.yabairc).
+1. Clone the repo and build with Xcode:
 
-3. Hide the system menu bar in **System Settings** and uncheck **Desktop & Dock → Show items → On Desktop**.
+```sh
+git clone https://github.com/bettercoderthanyou/barik-but-better.git
+cd barik-but-better
+xcodebuild -scheme Barik -configuration Release build
+```
 
-4. Launch **barik** from the Applications folder.
+2. Copy the built app to Applications:
 
-5. Add **barik** to your login items for automatic startup.
+```sh
+cp -R ~/Library/Developer/Xcode/DerivedData/Barik-*/Build/Products/Release/Barik.app /Applications/
+```
 
-**That's it!** Try switching spaces and see the panel in action.
+> **Note:** Building from source requires Xcode (not just Command Line Tools).
+
+### Troubleshooting: "damaged and should be moved to Trash"
+
+If macOS says the app is damaged, run this command to remove the quarantine attribute:
+
+```sh
+xattr -cr /Applications/Barik.app
+```
+
+Alternatively, you can right-click the app in Finder and select **Open** to bypass the Gatekeeper warning.
+
+This happens because the app is not notarized with Apple. It is safe to use — you can verify by [building from source](#or-build-from-source).
+
+### Set up your desktop
+
+1. _(Optional)_ To display open applications and spaces, install [**yabai**](https://github.com/koekeishiya/yabai) or [**AeroSpace**](https://github.com/nikitabobko/AeroSpace) and set up hotkeys. For **yabai**, you'll need **skhd** or **Raycast scripts**. Don't forget to configure **top padding** — [here's an example for **yabai**](https://github.com/mocki-toki/barik/blob/main/example/.yabairc).
+
+2. Hide the system menu bar in **System Settings** and uncheck **Desktop & Dock → Show items → On Desktop**.
+
+3. Launch **barik** from the Applications folder.
+
+4. Add **barik** to your login items for automatic startup.
+
+**That's it!** Try switching spaces and see the panel in action. You can drag widgets to reorder them directly in the menu bar.
 
 ## Configuration
 
@@ -80,6 +110,7 @@ theme = "system" # system, light, dark
 displayed = [ # widgets on menu bar
     "default.spaces",
     "spacer",
+    "default.pomodoro",
     "default.nowplaying",
     "default.network",
     "default.battery",
@@ -149,7 +180,7 @@ Unfortunately, macOS does not support access to its API that allows music contro
 1. Spotify (requires the desktop application)
 2. Apple Music (requires the desktop application)
 
-Create an issue so we can add your favorite music service: https://github.com/mocki-toki/barik/issues/new
+Create an issue so we can add your favorite music service: https://github.com/bettercoderthanyou/barik-but-better/issues/new
 
 ## Where Are the Menu Items?
 
@@ -175,4 +206,4 @@ Apple and macOS are trademarks of Apple Inc. This project is not connected to Ap
 
 ## Stars
 
-[![Stargazers over time](https://starchart.cc/mocki-toki/barik.svg?variant=adaptive)](https://starchart.cc/mocki-toki/barik)
+[![Stargazers over time](https://starchart.cc/bettercoderthanyou/barik-but-better.svg?variant=adaptive)](https://starchart.cc/bettercoderthanyou/barik-but-better)

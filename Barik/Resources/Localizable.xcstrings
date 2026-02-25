@@ -1,11 +1,33 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
+
+    },
     "?%@?" : {
       "shouldTranslate" : false
     },
     "%lld" : {
       "shouldTranslate" : false
+    },
+    "%lld all-day" : {
+
+    },
+    "%lld all-day event%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld all-day event%2$@"
+          }
+        }
+      }
+    },
+    "%lld%%" : {
+
+    },
+    "%lld%% chance of rain" : {
+
     },
     "ALL_DAY" : {
       "extractionState" : "manual",
@@ -132,7 +154,14 @@
         }
       }
     },
+    "Back" : {
+
+    },
+    "CALENDARS" : {
+
+    },
     "Channel: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -382,6 +411,7 @@
       }
     },
     "Ethernet: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -505,7 +535,24 @@
         }
       }
     },
+    "H:%@ L:%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "H:%1$@ L:%2$@"
+          }
+        }
+      }
+    },
+    "Known Network" : {
+
+    },
+    "Loading weather..." : {
+
+    },
     "Noise: %lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -629,7 +676,17 @@
         }
       }
     },
+    "Open in Calendar" : {
+
+    },
+    "Open Weather" : {
+
+    },
+    "Other Networks" : {
+
+    },
     "RSSI: %lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -754,6 +811,7 @@
       }
     },
     "Signal strength: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1622,6 +1680,12 @@
           }
         }
       }
+    },
+    "Wi-Fi" : {
+
+    },
+    "Wi-Fi Settings..." : {
+
     }
   },
   "version" : "1.0"
