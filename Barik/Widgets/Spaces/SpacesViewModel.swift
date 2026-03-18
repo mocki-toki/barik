@@ -2,10 +2,14 @@ import AppKit
 import Combine
 import Foundation
 
-class SpacesViewModel: ObservableObject {
+class SpacesViewModel: ObservableObject, ConditionallyActivatableWidget {
     @Published var spaces: [AnySpace] = []
     private var timer: Timer?
     private var provider: AnySpacesProvider?
+    private var currentInterval: TimeInterval = 5.0
+    let widgetId = "default.spaces"
+    
+    private var isActive = false
 
     init() {
         let runningApps = NSWorkspace.shared.runningApplications.compactMap {
@@ -18,15 +22,78 @@ class SpacesViewModel: ObservableObject {
         } else {
             provider = nil
         }
-        startMonitoring()
+        
+        setupNotifications()
+        // For now, always activate to ensure widgets work
+        activate()
     }
 
     deinit {
         stopMonitoring()
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    private func setupNotifications() {
+        // Listen for performance mode changes
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("PerformanceModeChanged"),
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            if let intervals = notification.object as? [String: TimeInterval],
+               let newInterval = intervals["spaces"] {
+                self?.updateTimerInterval(newInterval)
+            }
+        }
+        
+        // For future use - widget activation/deactivation
+        // NotificationCenter.default.addObserver(
+        //     forName: NSNotification.Name("WidgetActivationChanged"),
+        //     object: nil,
+        //     queue: .main
+        // ) { [weak self] notification in
+        //     if let activeWidgets = notification.object as? Set<String> {
+        //         if activeWidgets.contains(self?.widgetId ?? "") {
+        //             self?.activate()
+        //         } else {
+        //             self?.deactivate()
+        //         }
+        //     }
+        // }
+    }
+    
+    func activate() {
+        guard !isActive else { 
+            return 
+        }
+        
+        isActive = true
+        
+        // Get current performance mode interval
+        let performanceManager = PerformanceModeManager.shared
+        let intervals = performanceManager.getTimerIntervals(for: performanceManager.currentMode)
+        currentInterval = intervals["spaces"] ?? 5.0
+        
+        startMonitoring()
+    }
+    
+    func deactivate() {
+        guard isActive else { return }
+        isActive = false
+        stopMonitoring()
+    }
+    
+    private func updateTimerInterval(_ newInterval: TimeInterval) {
+        guard isActive else { return }
+        currentInterval = newInterval
+        
+        // Restart timer with new interval
+        stopMonitoring()
+        startMonitoring()
     }
 
     private func startMonitoring() {
-        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) {
+        timer = Timer.scheduledTimer(withTimeInterval: currentInterval, repeats: true) {
             [weak self] _ in
             self?.loadSpaces()
         }
@@ -48,7 +115,14 @@ class SpacesViewModel: ObservableObject {
                 }
                 return
             }
-            let sortedSpaces = spaces.sorted { $0.id < $1.id }
+            let sortedSpaces = spaces.sorted { a, b in
+                // Important to avoid 1, 10, 11, 2 as the sorted order
+                if let intA = Int(a.id), let intB = Int(b.id) {
+                    return intA < intB
+                }
+                // Else return to string comparison
+                return a.id < b.id
+            }
             DispatchQueue.main.async {
                 self.spaces = sortedSpaces
             }

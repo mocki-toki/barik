@@ -21,7 +21,7 @@ struct TimeWidget: View {
 
     @State private var rect = CGRect()
 
-    private let timer = Timer.publish(every: 1, on: .main, in: .common)
+    private let timer = Timer.publish(every: 5, on: .main, in: .common)
         .autoconnect()
 
     var body: some View {

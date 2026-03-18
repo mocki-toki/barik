@@ -3,23 +3,90 @@ import Foundation
 import IOKit.ps
 
 /// This class monitors the battery status.
-class BatteryManager: ObservableObject {
+class BatteryManager: ObservableObject, ConditionallyActivatableWidget {
     @Published var batteryLevel: Int = 0
     @Published var isCharging: Bool = false
     @Published var isPluggedIn: Bool = false
     private var timer: Timer?
+    
+    private var currentInterval: TimeInterval = 30.0
+    let widgetId = "default.battery"
+    
+    private var isActive = false
 
     init() {
-        startMonitoring()
+        setupNotifications()
+        // For now, always activate to ensure widgets work
+        activate()
     }
 
     deinit {
         stopMonitoring()
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    private func setupNotifications() {
+        // Listen for performance mode changes
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("PerformanceModeChanged"),
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            if let intervals = notification.object as? [String: TimeInterval],
+               let newInterval = intervals["battery"] {
+                self?.updateTimerInterval(newInterval)
+            }
+        }
+        
+        // Listen for widget activation changes
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("WidgetActivationChanged"),
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            if let activeWidgets = notification.object as? Set<String> {
+                if activeWidgets.contains(self?.widgetId ?? "") {
+                    self?.activate()
+                } else {
+                    self?.deactivate()
+                }
+            }
+        }
+    }
+    
+    func activate() {
+        guard !isActive else { 
+            return 
+        }
+        
+        isActive = true
+        
+        // Get current performance mode interval
+        let performanceManager = PerformanceModeManager.shared
+        let intervals = performanceManager.getTimerIntervals(for: performanceManager.currentMode)
+        currentInterval = intervals["battery"] ?? 30.0
+        
+        startMonitoring()
+    }
+    
+    func deactivate() {
+        guard isActive else { return }
+        isActive = false
+        stopMonitoring()
+    }
+    
+    private func updateTimerInterval(_ newInterval: TimeInterval) {
+        guard isActive else { return }
+        currentInterval = newInterval
+        
+        // Restart timer with new interval
+        stopMonitoring()
+        startMonitoring()
     }
 
     private func startMonitoring() {
-        // Update every 1 second.
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) {
+        // Update every X seconds based on performance mode
+        timer = Timer.scheduledTimer(withTimeInterval: currentInterval, repeats: true) {
             [weak self] _ in
             self?.updateBatteryStatus()
         }

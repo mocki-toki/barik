@@ -30,12 +30,14 @@ struct MenuBarPopupView<Content: View>: View {
     }
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
+        let isBottom = configManager.config.experimental.position == .bottom
+        
+        ZStack(alignment: isBottom ? .bottomTrailing : .topTrailing) {
             content
                 .background(Color.black)
                 .cornerRadius(((1.0 - animationValue) * 1) + 40)
-                .padding(.top, foregroundHeight + 5)
-                .offset(x: computedOffset, y: computedYOffset)
+                .padding(isBottom ? .bottom : .top, foregroundHeight + 5)
+                .offset(x: computedOffset, y: isBottom ? -computedYOffset : computedYOffset)
                 .shadow(radius: 30)
                 .blur(radius: (1.0 - (0.1 + 0.9 * animationValue)) * 20)
                 .scaleEffect(x: 0.2 + 0.8 * animationValue, y: animationValue)
@@ -151,7 +153,15 @@ struct MenuBarPopupView<Content: View>: View {
     }
 
     var computedYOffset: CGFloat {
-        return viewFrame.height / 2
+        let isBottom = configManager.config.experimental.position == .bottom
+        
+        if isBottom {
+            // For bottom positioning, use the original logic
+            return viewFrame.height / 2
+        } else {
+            // For top positioning, reduce the offset to bring popups closer
+            return viewFrame.height / 2 - 65  // Bring closer to top menu bar
+        }
     }
 }
 

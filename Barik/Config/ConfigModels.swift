@@ -246,23 +246,31 @@ struct AerospaceConfig: Decodable {
     }
 }
 
+enum MenuBarPosition: String, Decodable, CaseIterable {
+    case top = "top"
+    case bottom = "bottom"
+}
+
 struct ExperimentalConfig: Decodable {
     let foreground: ForegroundConfig
     let background: BackgroundConfig
+    let position: MenuBarPosition
     
     enum CodingKeys: String, CodingKey {
-        case foreground, background
+        case foreground, background, position
     }
     
     init() {
         self.foreground = ForegroundConfig()
         self.background = BackgroundConfig()
+        self.position = .top
     }
     
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         foreground = try container.decodeIfPresent(ForegroundConfig.self, forKey: .foreground) ?? ForegroundConfig()
         background = try container.decodeIfPresent(BackgroundConfig.self, forKey: .background) ?? BackgroundConfig()
+        position = try container.decodeIfPresent(MenuBarPosition.self, forKey: .position) ?? .top
     }
 }
 

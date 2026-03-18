@@ -190,18 +190,86 @@ final class NowPlayingProvider {
 // MARK: - Now Playing Manager
 
 /// An observable manager that periodically updates the now playing song.
-final class NowPlayingManager: ObservableObject {
+final class NowPlayingManager: ObservableObject, ConditionallyActivatableWidget {
     static let shared = NowPlayingManager()
 
     @Published private(set) var nowPlaying: NowPlayingSong?
     private var cancellable: AnyCancellable?
+    private var currentInterval: TimeInterval = 5.0
+    let widgetId = "default.nowplaying"
+    
+    private var isActive = false
 
     private init() {
-        cancellable = Timer.publish(every: 0.3, on: .main, in: .common)
+        setupNotifications()
+        // For now, always activate to ensure widgets work
+        activate()
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    private func setupNotifications() {
+        // Listen for performance mode changes
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("PerformanceModeChanged"),
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            if let intervals = notification.object as? [String: TimeInterval],
+               let newInterval = intervals["nowplaying"] {
+                self?.updateTimerInterval(newInterval)
+            }
+        }
+    }
+    
+    func activate() {
+        guard !isActive else { 
+            return 
+        }
+        
+        isActive = true
+        
+        // Get current performance mode interval
+        let performanceManager = PerformanceModeManager.shared
+        let intervals = performanceManager.getTimerIntervals(for: performanceManager.currentMode)
+        currentInterval = intervals["nowplaying"] ?? 5.0
+        
+        startTimer()
+    }
+    
+    func deactivate() {
+        guard isActive else { return }
+        isActive = false
+        stopTimer()
+        
+        // Clear the now playing info when deactivated
+        DispatchQueue.main.async {
+            self.nowPlaying = nil
+        }
+    }
+    
+    private func updateTimerInterval(_ newInterval: TimeInterval) {
+        guard isActive else { return }
+        currentInterval = newInterval
+        
+        // Restart timer with new interval
+        stopTimer()
+        startTimer()
+    }
+    
+    private func startTimer() {
+        cancellable = Timer.publish(every: currentInterval, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
                 self?.updateNowPlaying()
             }
+    }
+    
+    private func stopTimer() {
+        cancellable?.cancel()
+        cancellable = nil
     }
 
     /// Updates the now playing song asynchronously.

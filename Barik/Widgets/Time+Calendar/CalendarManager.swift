@@ -37,13 +37,19 @@ class CalendarManager: ObservableObject {
     private func startMonitoring() {
         timer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) {
             [weak self] _ in
-            self?.fetchTodaysEvents()
-            self?.fetchTomorrowsEvents()
-            self?.fetchNextEvent()
+            // Run calendar fetches on background queue to avoid blocking UI
+            DispatchQueue.global(qos: .background).async {
+                self?.fetchTodaysEvents()
+                self?.fetchTomorrowsEvents()
+                self?.fetchNextEvent()
+            }
         }
-        fetchTodaysEvents()
-        fetchTomorrowsEvents()
-        fetchNextEvent()
+        // Initial fetch on background queue
+        DispatchQueue.global(qos: .background).async {
+            self.fetchTodaysEvents()
+            self.fetchTomorrowsEvents()
+            self.fetchNextEvent()
+        }
     }
 
     private func stopMonitoring() {
@@ -76,6 +82,14 @@ class CalendarManager: ObservableObject {
     }
 
     func fetchNextEvent() {
+        // Check if calendar access is available first
+        guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else {
+            DispatchQueue.main.async {
+                self.nextEvent = nil
+            }
+            return
+        }
+        
         let calendars = eventStore.calendars(for: .event)
         let now = Date()
         let calendar = Calendar.current
@@ -100,6 +114,14 @@ class CalendarManager: ObservableObject {
     }
 
     func fetchTodaysEvents() {
+        // Check if calendar access is available first
+        guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else {
+            DispatchQueue.main.async {
+                self.todaysEvents = []
+            }
+            return
+        }
+        
         let calendars = eventStore.calendars(for: .event)
         let now = Date()
         let calendar = Calendar.current
@@ -123,6 +145,14 @@ class CalendarManager: ObservableObject {
     }
 
     func fetchTomorrowsEvents() {
+        // Check if calendar access is available first
+        guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else {
+            DispatchQueue.main.async {
+                self.tomorrowsEvents = []
+            }
+            return
+        }
+        
         let calendars = eventStore.calendars(for: .event)
         let now = Date()
         let calendar = Calendar.current

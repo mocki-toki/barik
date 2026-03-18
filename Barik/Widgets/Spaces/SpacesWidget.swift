@@ -4,18 +4,100 @@ struct SpacesWidget: View {
     @StateObject var viewModel = SpacesViewModel()
 
     @ObservedObject var configManager = ConfigManager.shared
+    @EnvironmentObject var configProvider: ConfigProvider
+    
     var foregroundHeight: CGFloat { configManager.config.experimental.foreground.resolveHeight() }
+    
+    var config: ConfigData { configProvider.config }
+    var windowConfig: ConfigData { config["window"]?.dictionaryValue ?? [:] }
+    var notchConfig: ConfigData {
+        windowConfig["notch"]?.dictionaryValue ?? [:]
+    }
+    var notchWidth: Int { notchConfig["width"]?.intValue ?? 0 }
+    
+    @State private var firstSectionCount: Int = 0
+    @State private var screenWidth: CGFloat = NSScreen.main?.frame.width ?? 1000
+    
+    
+    // MARK: - Configurable Properties
+    private var spacing: CGFloat { foregroundHeight < 30 ? 0 : 8 }
+    private var firstSectionMaxWidth: CGFloat {
+        notchWidth != 0 ?
+            ((screenWidth - CGFloat(notchWidth)) / 2) - (configManager.config.rootToml.experimental?.foreground.horizontalPadding ?? 25)
+        : .infinity
+    }
 
     var body: some View {
-        HStack(spacing: foregroundHeight < 30 ? 0 : 8) {
-            ForEach(viewModel.spaces) { space in
-                SpaceView(space: space)
+        HStack(spacing: 0) {
+            // First section (up to firstSectionMaxWidth)
+            HStack (spacing: spacing) {
+                ForEach(viewModel.spaces.prefix(firstSectionCount)) { space in
+                    SpaceView(space: space)
+                }
             }
+            .frame(width: firstSectionMaxWidth, alignment: .leading)
+            .experimentalConfiguration(horizontalPadding: 5, cornerRadius: 10)
+            .animation(.smooth(duration: 0.3), value: viewModel.spaces)
+            .foregroundStyle(Color.foreground)
+            .environmentObject(viewModel)
+            
+            Spacer()
+                .frame(width: CGFloat(notchWidth), height: 20)
+                // Visualise notch here :
+                .background(.clear)
+            
+            // Remaining items
+            HStack (spacing: spacing) {
+                ForEach(viewModel.spaces.dropFirst(firstSectionCount)) { space in
+                    SpaceView(space: space)
+                }
+            }
+            .experimentalConfiguration(horizontalPadding: 5, cornerRadius: 10)
+            .animation(.smooth(duration: 0.3), value: viewModel.spaces)
+            .foregroundStyle(Color.foreground)
+            .environmentObject(viewModel)
         }
-        .experimentalConfiguration(horizontalPadding: 5, cornerRadius: 10)
-        .animation(.smooth(duration: 0.3), value: viewModel.spaces)
-        .foregroundStyle(Color.foreground)
-        .environmentObject(viewModel)
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)) { _ in
+            screenWidth = NSScreen.main?.frame.width ?? 1000
+        }
+        .background(
+            // Hidden measuring HStack
+            HStack(spacing: spacing) {
+                ForEach(Array(viewModel.spaces.enumerated()), id: \.element.id) { index, space in
+                    SpaceView(space: space)
+                        .background(GeometryReader { geo in
+                            Color.clear.preference(
+                                key: SpaceWidthPreferenceKey.self,
+                                value: [index: geo.size.width]
+                            )
+                        })
+                }
+            }
+            .hidden()
+        )
+        .onPreferenceChange(SpaceWidthPreferenceKey.self) { widths in
+            var total: CGFloat = 0
+            
+            for i in 0..<viewModel.spaces.count {
+                let itemWidth = widths[i] ?? 0
+                let newTotal = total + itemWidth + (i > 0 ? spacing : 0)
+                
+                if newTotal > firstSectionMaxWidth {
+                    firstSectionCount = max(1, i)
+                    return
+                }
+                total = newTotal
+            }
+            firstSectionCount = viewModel.spaces.count
+        }
+    }
+}
+
+private struct SpaceWidthPreferenceKey: PreferenceKey {
+    static var defaultValue: [Int: CGFloat] = [:]
+    
+    static func reduce(value: inout [Int: CGFloat], nextValue: () -> [Int: CGFloat]) {
+        value.merge(nextValue()) { $1 }
     }
 }
 

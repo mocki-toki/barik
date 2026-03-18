@@ -4,8 +4,14 @@
     "?%@?" : {
       "shouldTranslate" : false
     },
+    "%@ GB" : {
+
+    },
     "%lld" : {
       "shouldTranslate" : false
+    },
+    "%lld%%" : {
+
     },
     "ALL_DAY" : {
       "extractionState" : "manual",
@@ -132,6 +138,9 @@
         }
       }
     },
+    "Changes update intervals for widgets to optimize energy consumption" : {
+
+    },
     "Channel: %@" : {
       "localizations" : {
         "ar" : {
@@ -255,6 +264,21 @@
           }
         }
       }
+    },
+    "CPU" : {
+
+    },
+    "CPU Usage" : {
+
+    },
+    "Current keyboard layout: %@" : {
+
+    },
+    "Current: %@" : {
+
+    },
+    "Download" : {
+
     },
     "EMPTY_EVENTS" : {
       "extractionState" : "manual",
@@ -505,6 +529,24 @@
         }
       }
     },
+    "Idle" : {
+
+    },
+    "Keyboard Layout" : {
+
+    },
+    "Memory Usage" : {
+
+    },
+    "Mute" : {
+
+    },
+    "Network Activity" : {
+
+    },
+    "No additional layouts available" : {
+
+    },
     "Noise: %lld" : {
       "localizations" : {
         "ar" : {
@@ -628,6 +670,15 @@
           }
         }
       }
+    },
+    "Performance Mode" : {
+
+    },
+    "Performance Mode: %@" : {
+
+    },
+    "RAM" : {
+
     },
     "RSSI: %lld" : {
       "localizations" : {
@@ -876,6 +927,15 @@
           }
         }
       }
+    },
+    "Switch to Next Layout" : {
+
+    },
+    "System" : {
+
+    },
+    "System Monitor" : {
+
     },
     "TODAY" : {
       "extractionState" : "manual",
@@ -1127,6 +1187,9 @@
         }
       }
     },
+    "Unmute" : {
+
+    },
     "Update" : {
       "localizations" : {
         "ar" : {
@@ -1375,6 +1438,12 @@
         }
       }
     },
+    "Upload" : {
+
+    },
+    "User" : {
+
+    },
     "v%@ Changelog" : {
       "localizations" : {
         "ar" : {
@@ -1498,6 +1567,9 @@
           }
         }
       }
+    },
+    "Volume" : {
+
     },
     "What's new" : {
       "localizations" : {

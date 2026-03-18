@@ -30,7 +30,7 @@ struct MenuBarView: View {
         }
         .foregroundStyle(Color.foregroundOutside)
         .frame(height: max(configManager.config.experimental.foreground.resolveHeight(), 1.0))
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: configManager.config.experimental.position == .bottom ? .bottom : .top)
         .padding(.horizontal, configManager.config.experimental.foreground.horizontalPadding)
         .background(.black.opacity(0.001))
         .preferredColorScheme(theme)
@@ -57,6 +57,22 @@ struct MenuBarView: View {
             
         case "default.nowplaying":
             NowPlayingWidget()
+                .environmentObject(config)
+
+        case "default.cpuram":
+            CPURAMWidget()
+                .environmentObject(config)
+
+        case "default.networkactivity":
+            NetworkActivityWidget()
+                .environmentObject(config)
+
+        case "default.performance":
+            PerformanceModeWidget()
+                .environmentObject(config)
+
+        case "default.keyboardlayout":
+            KeyboardLayoutWidget()
                 .environmentObject(config)
 
         case "spacer":

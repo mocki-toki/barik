@@ -77,7 +77,7 @@ class MenuBarPopup {
                             MenuBarPopupView {
                                 content()
                             }
-                            .position(x: rect.midX)
+                            .position(x: rect.midX, y: rect.midY)
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .id(UUID())
@@ -95,7 +95,7 @@ class MenuBarPopup {
                         MenuBarPopupView {
                             content()
                         }
-                        .position(x: rect.midX)
+                        .position(x: rect.midX, y: rect.midY)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             )

@@ -51,6 +51,9 @@ final class ConfigManager: ObservableObject {
             let rootToml = try decoder.decode(RootToml.self, from: content)
             DispatchQueue.main.async {
                 self.config = Config(rootToml: rootToml)
+                
+                // Notify about config change for widget activation
+                NotificationCenter.default.post(name: NSNotification.Name("ConfigChanged"), object: nil)
             }
         } catch {
             initError = "Error parsing TOML file: \(error.localizedDescription)"
@@ -74,6 +77,9 @@ final class ConfigManager: ObservableObject {
                 "spacer",
                 "default.network",
                 "default.battery",
+                "default.cpuram",
+                "default.networkactivity",
+                "default.performance",
                 "divider",
                 # { "default.time" = { time-zone = "America/Los_Angeles", format = "E d, hh:mm" } },
                 "default.time"
@@ -83,6 +89,7 @@ final class ConfigManager: ObservableObject {
             space.show-key = true        # show space number (or character, if you use AeroSpace)
             window.show-title = true
             window.title.max-length = 50
+            window.notch.width = 0
 
             [widgets.default.battery]
             show-percentage = true
@@ -93,9 +100,24 @@ final class ConfigManager: ObservableObject {
             format = "E d, J:mm"
             calendar.format = "J:mm"
 
-            calendar.show-events = true
+            calendar.show-events = false
             # calendar.allow-list = ["Home", "Personal"] # show only these calendars
             # calendar.deny-list = ["Work", "Boss"] # show all calendars except these
+
+            [widgets.default.cpuram]
+            show-icon = false
+            cpu-warning-level = 70
+            cpu-critical-level = 90
+            ram-warning-level = 70
+            ram-critical-level = 90
+
+            [widgets.default.networkactivity]
+            # No specific configuration options yet
+
+            [widgets.default.performance]
+            # Performance mode widget - replaces volume widget
+            # Controls energy consumption by adjusting update intervals
+            # Modes: battery-saver (default), balanced, max-performance
 
             [popup.default.time]
             view-variant = "box"
