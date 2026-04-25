@@ -66,6 +66,7 @@ private struct NowPlayingVerticalPopup: View {
                     : nil
                 )
                 .animation(.smooth(duration: 0.5, extraBounce: 0.4), value: song.state == .paused)
+                .onTapGesture { playingManager.openMusicApp() }
 
                 VStack(alignment: .center) {
                     Text(song.title)
@@ -77,6 +78,7 @@ private struct NowPlayingVerticalPopup: View {
                         .font(.system(size: 15))
                         .fontWeight(.light)
                 }
+                .onTapGesture { playingManager.openMusicApp() }
 
                 HStack {
                     Text(timeString(from: position))
@@ -135,6 +137,7 @@ struct NowPlayingHorizontalPopup: View {
                         : nil
                     )
                     .animation(.smooth(duration: 0.5, extraBounce: 0.4), value: song.state == .paused)
+                    .onTapGesture { playingManager.openMusicApp() }
 
                     VStack(alignment: .leading, spacing: 0) {
                         Text(song.title)
@@ -147,6 +150,7 @@ struct NowPlayingHorizontalPopup: View {
                     }
                     .padding(.trailing, 8)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .onTapGesture { playingManager.openMusicApp() }
                 }
 
                 HStack {

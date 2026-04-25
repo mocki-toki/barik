@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Stem -->
+  <path d="M30 16 C30 12 27 6 24 8 C21 10 26 14 28 16" fill="none" stroke="black" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M34 16 C34 12 37 6 40 8 C43 10 38 14 36 16" fill="none" stroke="black" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Body -->
+  <ellipse cx="32" cy="38" rx="23" ry="20" fill="none" stroke="black" stroke-width="3.5"/>
+</svg>

@@ -8,6 +8,7 @@ struct TimeWidget: View {
 
     var format: String { config["format"]?.stringValue ?? "E d, J:mm" }
     var timeZone: String? { config["time-zone"]?.stringValue }
+    var clickAction: String { config["click-action"]?.stringValue ?? "calendar" }
 
     var calendarFormat: String {
         calendarConfig?["format"]?.stringValue ?? "J:mm"
@@ -17,7 +18,11 @@ struct TimeWidget: View {
     }
 
     @State private var currentTime = Date()
-    let calendarManager: CalendarManager
+    @StateObject private var calendarManager: CalendarManager
+
+    init(configProvider: ConfigProvider) {
+        _calendarManager = StateObject(wrappedValue: CalendarManager(configProvider: configProvider))
+    }
 
     @State private var rect = CGRect()
 
@@ -54,13 +59,18 @@ struct TimeWidget: View {
         )
         .experimentalConfiguration(cornerRadius: 15)
         .frame(maxHeight: .infinity)
-        .background(.black.opacity(0.001))
+        .contentShape(Rectangle())
         .monospacedDigit()
         .onTapGesture {
-            MenuBarPopup.show(rect: rect, id: "calendar") {
-                CalendarPopup(
-                    calendarManager: calendarManager,
-                    configProvider: configProvider)
+            switch clickAction {
+            case "notification-center":
+                SystemUIHelper.openNotificationCenter()
+            default:
+                MenuBarPopup.show(rect: rect, id: "calendar") {
+                    CalendarPopup(
+                        calendarManager: calendarManager,
+                        configProvider: configProvider)
+                }
             }
         }
     }
@@ -97,10 +107,9 @@ struct TimeWidget: View {
 struct TimeWidget_Previews: PreviewProvider {
     static var previews: some View {
         let provider = ConfigProvider(config: ConfigData())
-        let manager = CalendarManager(configProvider: provider)
 
         ZStack {
-            TimeWidget(calendarManager: manager)
+            TimeWidget(configProvider: provider)
                 .environmentObject(provider)
         }.frame(width: 500, height: 100)
     }
