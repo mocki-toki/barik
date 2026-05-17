@@ -133,7 +133,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         newPanel.ignoresMouseEvents = ignoresMouseEvents
         newPanel.setAccessibilityRole(.popover)
         newPanel.setAccessibilityElement(false)
-        newPanel.contentView = ClickThroughHostingView(rootView: hostingRootView)
+        newPanel.contentView = NSHostingView(rootView: hostingRootView)
         newPanel.orderFront(nil)
         panel = newPanel
     }
@@ -150,14 +150,3 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
-private final class ClickThroughHostingView<Content: View>: NSHostingView<Content> {
-    override func hitTest(_ point: NSPoint) -> NSView? {
-        let hitView = super.hitTest(point)
-
-        if hitView === self {
-            return nil
-        }
-
-        return hitView
-    }
-}
