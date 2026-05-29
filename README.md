@@ -81,6 +81,11 @@ displayed = [ # widgets on menu bar
     "default.spaces",
     "spacer",
     "default.nowplaying",
+  "default.wifi",
+  "default.bluetooth",
+  "default.brew",
+  "default.cpu",
+  "default.github",
     "default.network",
     "default.battery",
     "divider",
@@ -104,6 +109,22 @@ view-variant = "horizontal"
 show-percentage = true
 warning-level = 30
 critical-level = 10
+
+[widgets.default.wifi]
+update_freq = 5
+show-label = true
+
+[widgets.default.bluetooth]
+update_freq = 5
+
+[widgets.default.brew]
+update_freq = 300
+
+[widgets.default.cpu]
+update_freq = 2
+
+[widgets.default.github]
+update_freq = 180
 
 [widgets.default.time]
 format = "E d, J:mm"

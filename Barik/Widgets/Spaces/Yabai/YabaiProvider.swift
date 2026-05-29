@@ -1,24 +1,26 @@
+import AppKit
 import Foundation
 
 class YabaiSpacesProvider: SpacesProvider, SwitchableSpacesProvider {
     typealias SpaceType = YabaiSpace
-    let executablePath = ConfigManager.shared.config.yabai.path
+    private let executablePath: String
+
+    init(executablePath: String) {
+        self.executablePath = executablePath
+    }
 
     private func runYabaiCommand(arguments: [String]) -> Data? {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: executablePath)
-        process.arguments = arguments
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        do {
-            try process.run()
-        } catch {
-            print("Yabai error: \(error)")
+        guard
+            let result = CommandRunner.run(
+                executable: executablePath,
+                arguments: arguments
+            ),
+            result.exitCode == 0,
+            !result.output.isEmpty
+        else {
             return nil
         }
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
-        return data
+        return result.output.data(using: .utf8)
     }
 
     private func fetchSpaces() -> [YabaiSpace]? {
@@ -97,5 +99,43 @@ class YabaiSpacesProvider: SpacesProvider, SwitchableSpacesProvider {
 
     func focusWindow(windowId: String) {
         _ = runYabaiCommand(arguments: ["-m", "window", "--focus", windowId])
+    }
+}
+
+enum SpacesProviderFactory {
+    static func makeProvider() -> AnySpacesProvider? {
+        let runningApps = NSWorkspace.shared.runningApplications.compactMap {
+            $0.localizedName?.lowercased()
+        }
+
+        if runningApps.contains("yabai"), let path = resolveYabaiPath() {
+            return AnySpacesProvider(YabaiSpacesProvider(executablePath: path))
+        }
+        if runningApps.contains("aerospace"), let path = resolveAerospacePath() {
+            return AnySpacesProvider(AerospaceSpacesProvider())
+        }
+        return nil
+    }
+
+    private static func resolveYabaiPath() -> String? {
+        let configured = ConfigManager.shared.config.yabai.path
+        if FileManager.default.isExecutableFile(atPath: configured) {
+            return configured
+        }
+        return ExecutableLocator.resolve("yabai", preferred: [
+            "/opt/homebrew/bin/yabai",
+            "/usr/local/bin/yabai",
+        ])
+    }
+
+    private static func resolveAerospacePath() -> String? {
+        let configured = ConfigManager.shared.config.aerospace.path
+        if FileManager.default.isExecutableFile(atPath: configured) {
+            return configured
+        }
+        return ExecutableLocator.resolve("aerospace", preferred: [
+            "/opt/homebrew/bin/aerospace",
+            "/usr/local/bin/aerospace",
+        ])
     }
 }

@@ -45,6 +45,21 @@ struct MenuBarView: View {
         case "default.spaces":
             SpacesWidget().environmentObject(config)
 
+        case "default.wifi":
+            WifiWidget().environmentObject(config)
+
+        case "default.bluetooth":
+            BluetoothWidget().environmentObject(config)
+
+        case "default.brew":
+            BrewWidget().environmentObject(config)
+
+        case "default.cpu":
+            CPUWidget().environmentObject(config)
+
+        case "default.github":
+            GitHubWidget().environmentObject(config)
+
         case "default.network":
             NetworkWidget().environmentObject(config)
 

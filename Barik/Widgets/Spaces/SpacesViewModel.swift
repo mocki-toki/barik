@@ -8,16 +8,7 @@ class SpacesViewModel: ObservableObject {
     private var provider: AnySpacesProvider?
 
     init() {
-        let runningApps = NSWorkspace.shared.runningApplications.compactMap {
-            $0.localizedName?.lowercased()
-        }
-        if runningApps.contains("yabai") {
-            provider = AnySpacesProvider(YabaiSpacesProvider())
-        } else if runningApps.contains("aerospace") {
-            provider = AnySpacesProvider(AerospaceSpacesProvider())
-        } else {
-            provider = nil
-        }
+        provider = SpacesProviderFactory.makeProvider()
         startMonitoring()
     }
 

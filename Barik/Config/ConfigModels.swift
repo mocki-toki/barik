@@ -202,6 +202,17 @@ extension TOMLValue {
         return nil
     }
 
+    var doubleValue: Double? {
+        switch self {
+        case let .double(d):
+            return d
+        case let .int(i):
+            return Double(i)
+        default:
+            return nil
+        }
+    }
+
     var boolValue: Bool? {
         if case let .bool(b) = self { return b }
         return nil
@@ -222,13 +233,11 @@ struct YabaiConfig: Decodable {
     let path: String
 
     init() {
-        if FileManager.default.fileExists(atPath: "/opt/homebrew/bin/yabai") {
-            self.path = "/opt/homebrew/bin/yabai"
-        } else if FileManager.default.fileExists(atPath: "/usr/local/bin/yabai") {
-            self.path = "/usr/local/bin/yabai"
-        } else {
-            self.path = "/opt/homebrew/bin/yabai"
-        }
+        self.path =
+            ExecutableLocator.resolve("yabai", preferred: [
+                "/opt/homebrew/bin/yabai",
+                "/usr/local/bin/yabai",
+            ]) ?? ""
     }
 }
 
@@ -236,13 +245,11 @@ struct AerospaceConfig: Decodable {
     let path: String
 
     init() {
-        if FileManager.default.fileExists(atPath: "/opt/homebrew/bin/aerospace") {
-            self.path = "/opt/homebrew/bin/aerospace"
-        } else if FileManager.default.fileExists(atPath: "/usr/local/bin/aerospace") {
-            self.path = "/usr/local/bin/aerospace"
-        } else {
-            self.path = "/opt/homebrew/bin/aerospace"
-        }
+        self.path =
+            ExecutableLocator.resolve("aerospace", preferred: [
+                "/opt/homebrew/bin/aerospace",
+                "/usr/local/bin/aerospace",
+            ]) ?? ""
     }
 }
 

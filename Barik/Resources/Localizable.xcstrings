@@ -7,6 +7,9 @@
     "%lld" : {
       "shouldTranslate" : false
     },
+    "%lld%%" : {
+
+    },
     "ALL_DAY" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -381,6 +384,9 @@
         }
       }
     },
+    "Error: %@" : {
+
+    },
     "Ethernet: %@" : {
       "localizations" : {
         "ar" : {
@@ -504,6 +510,15 @@
           }
         }
       }
+    },
+    "GitHub Notifications" : {
+
+    },
+    "N/A" : {
+
+    },
+    "No new notifications" : {
+
     },
     "Noise: %lld" : {
       "localizations" : {
