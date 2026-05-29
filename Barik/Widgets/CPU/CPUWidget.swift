@@ -159,6 +159,7 @@ struct CPUWidget: View {
                     systemValues: viewModel.systemHistory
                 )
                 .frame(width: 75, height: 22)
+                .padding(.bottom, 6)
                 .padding(.leading, 4)
 
                 Text("\(Int(viewModel.totalUsage * 100))%")
