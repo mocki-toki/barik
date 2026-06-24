@@ -54,13 +54,31 @@ class AerospaceSpacesProvider: SpacesProvider, SwitchableSpacesProvider {
         process.arguments = arguments
         let pipe = Pipe()
         process.standardOutput = pipe
+        
+        let timeout: TimeInterval = 2.0
+        let group = DispatchGroup()
+        var data: Data?
+        
         do {
             try process.run()
+            group.enter()
+            DispatchQueue.global().async {
+                data = pipe.fileHandleForReading.readDataToEndOfFile()
+                group.leave()
+            }
         } catch {
             print("Aerospace error: \(error)")
             return nil
         }
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        
+        let result = group.wait(timeout: DispatchTime.now() + timeout)
+        
+        if result == .timedOut {
+            print("Aerospace command timed out: \(arguments.joined(separator: " "))")
+            process.terminate()
+            return nil
+        }
+        
         process.waitUntilExit()
         return data
     }

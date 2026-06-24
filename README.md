@@ -143,6 +143,21 @@ blur = 3                                     # background type: from 1 to 6 for 
 
 Currently, you can customize the order of widgets (time, indicators, etc.) and adjust some of their settings. Soon, you’ll also be able to add custom widgets and completely change **barik**'s appearance—making it almost unrecognizable (hello, r/unixporn!).
 
+## Building from Source
+
+Build the project and copy it to `~/Applications`:
+
+```sh
+xcodebuild -project Barik.xcodeproj -scheme Barik -configuration Release build -derivedDataPath build
+
+# Copy to your Applications folder (~/Applications or /Applications):
+cp -R build/Build/Products/Release/Barik.app ~/Applications/
+
+rm -rf build
+```
+
+This compiles the app in Release mode and copies it to your Applications folder. Launch **barik** from `~/Applications` or add it to your login items.
+
 ## Future Plans
 
 I'm not planning to stick to minimal functionality—exciting new features are coming soon! The roadmap includes full style customization, the ability to create custom widgets or extend existing ones, and a public **Store** where you can share your styles and widgets.

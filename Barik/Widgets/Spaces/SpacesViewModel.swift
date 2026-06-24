@@ -11,23 +11,33 @@ class SpacesViewModel: ObservableObject {
     private var isLoadingSpaces = false
 
     init() {
-        let runningApps = NSWorkspace.shared.runningApplications.compactMap {
-            $0.localizedName?.lowercased()
-        }
-        if runningApps.contains("yabai") {
-            provider = AnySpacesProvider(YabaiSpacesProvider())
-        } else if runningApps.contains("aerospace") {
-            provider = AnySpacesProvider(AerospaceSpacesProvider())
-        } else if runningApps.contains("omniwm") {
-            provider = AnySpacesProvider(OmniWMSpacesProvider())
-        } else {
-            provider = nil
-        }
+        detectProvider()
         startMonitoring()
     }
 
     deinit {
         stopMonitoring()
+    }
+
+    private func detectProvider() {
+        let runningApps = NSWorkspace.shared.runningApplications.compactMap {
+            $0.localizedName?.lowercased()
+        }
+        if runningApps.contains("yabai") {
+            provider = AnySpacesProvider(YabaiSpacesProvider())
+            print("SpacesWidget: Yabai detected")
+        } else if runningApps.contains("aerospace") {
+            provider = AnySpacesProvider(AerospaceSpacesProvider())
+            print("SpacesWidget: AeroSpace detected")
+        } else if runningApps.contains("omniwm") {
+            provider = AnySpacesProvider(OmniWMSpacesProvider())
+            print("SpacesWidget: OmniWM detected")
+        } else {
+            if provider != nil {
+                print("SpacesWidget: No window manager detected, clearing provider")
+                provider = nil
+            }
+        }
     }
 
     private func startMonitoring() {
@@ -58,12 +68,16 @@ class SpacesViewModel: ObservableObject {
                 }
             }
 
+            if self.provider == nil {
+                self.detectProvider()
+            }
+
             guard
                 let provider = self.provider,
                 let spaces = provider.getSpacesWithWindows()
             else {
-                DispatchQueue.main.async {
-                    self.spaces = []
+                if self.provider != nil {
+                    print("SpacesWidget: Failed to fetch spaces from provider")
                 }
                 return
             }
@@ -169,16 +183,25 @@ class SpacesViewModel: ObservableObject {
         let appName = window.appName?.normalizedApplicationIdentifier
         let bundleId = window.appBundleId?.normalizedApplicationIdentifier
         let title = window.title.normalizedApplicationIdentifier
+        
         let resolvedMetadata = RunningApplicationCache.shared.metadata(for: window.processId)
         let resolvedAppName = resolvedMetadata?.localizedName?.normalizedApplicationIdentifier
         let resolvedBundleId = resolvedMetadata?.bundleIdentifier?.normalizedApplicationIdentifier
 
-        return [appName, bundleId, resolvedAppName, resolvedBundleId, title].contains { identifier in
-            guard let identifier else { return false }
-            return ignoredApplications.contains { ignoredIdentifier in
-                identifier.matchesIgnoredApplication(ignoredIdentifier)
+        // Check app identifiers with fuzzy matching
+        let appIdentifiers = [appName, bundleId, resolvedAppName, resolvedBundleId].compactMap { $0 }
+        for identifier in appIdentifiers {
+            if ignoredApplications.contains(where: { identifier.matchesIgnoredApplication($0) }) {
+                return true
             }
         }
+        
+        // Check window title with strict exact matching only
+        if ignoredApplications.contains(title) {
+            return true
+        }
+
+        return false
     }
 
     func switchToSpace(_ space: AnySpace, needWindowFocus: Bool = false) {
@@ -269,12 +292,6 @@ class IconCache {
     private let cache = NSCache<NSString, NSImage>()
     private init() {}
     func icon(for appName: String) -> NSImage? {
-        if !Thread.isMainThread {
-            return DispatchQueue.main.sync {
-                self.icon(for: appName)
-            }
-        }
-
         if let cached = cache.object(forKey: appName as NSString) {
             return cached
         }
