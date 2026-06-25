@@ -104,6 +104,7 @@ private struct WindowView: View {
             .count
         let title = sameAppCount > 1 && !alwaysDisplayAppTitleFor.contains { $0 == window.appName } ? window.title : (window.appName ?? "")
         let spaceIsFocused = space.windows.contains { $0.isFocused }
+        let isGrouped = window.windowCount != nil && window.windowCount! > 1
         HStack {
             ZStack {
                 if let icon = window.appIcon {
@@ -145,12 +146,28 @@ private struct WindowView: View {
         .frame(height: 30)
         .contentShape(Rectangle())
         .onTapGesture {
-            viewModel.switchToSpace(space)
-            usleep(100_000)
-            viewModel.switchToWindow(window)
+            if isGrouped {
+                handleGroupedWindowClick()
+            } else {
+                viewModel.switchToSpace(space)
+                usleep(100_000)
+                viewModel.switchToWindow(window)
+            }
         }
         .onHover { value in
             isHovered = value
         }
+    }
+
+    private func handleGroupedWindowClick() {
+        guard let groupedWindows = window.groupedWindows else { return }
+
+        let focusedWindowIndex = groupedWindows.firstIndex { $0.isFocused } ?? 0
+        let nextIndex = (focusedWindowIndex + 1) % groupedWindows.count
+        let nextWindow = groupedWindows[nextIndex]
+
+        viewModel.switchToSpace(space)
+        usleep(100_000)
+        viewModel.switchToWindow(nextWindow)
     }
 }

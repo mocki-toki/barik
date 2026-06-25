@@ -8,29 +8,78 @@ struct NowPlayingWidget: View {
 
     @State private var widgetFrame: CGRect = .zero
     @State private var animatedWidth: CGFloat = 0
+    @State private var lastSong: NowPlayingSong?
+    private let maxWidgetWidth: CGFloat = 500
+    private let iconWidth: CGFloat = 12
 
     var body: some View {
         ZStack(alignment: .trailing) {
             if let song = playingManager.nowPlaying {
-                // Hidden view for measuring the intrinsic width.
-                MeasurableNowPlayingContent(song: song) { measuredWidth in
-                    if animatedWidth == 0 {
-                        animatedWidth = measuredWidth
-                    } else if animatedWidth != measuredWidth {
-                        withAnimation(.smooth) {
-                            animatedWidth = measuredWidth
-                        }
-                    }
-                }
-                .hidden()
-
                 // Visible content with fixed animated width.
                 VisibleNowPlayingContent(song: song, width: animatedWidth)
+                    .contentShape(Rectangle())
                     .onTapGesture {
                         MenuBarPopup.show(rect: widgetFrame, id: "nowplaying") {
                             NowPlayingPopup(configProvider: configProvider)
                         }
                     }
+
+                // Hidden view for measuring the intrinsic width.
+                // Placed in an overlay on a zero-size view so it doesn't
+                // affect ZStack layout, while .fixedSize() lets it measure
+                // its natural unconstrained width.
+                Color.clear
+                    .frame(width: 0, height: 0)
+                    .overlay(
+                        MeasurableNowPlayingContent(song: song) { measuredWidth in
+                            let clampedWidth = min(measuredWidth, maxWidgetWidth)
+                            if animatedWidth == 0 {
+                                animatedWidth = clampedWidth
+                            } else if animatedWidth != clampedWidth {
+                                withAnimation(.smooth) {
+                                    animatedWidth = clampedWidth
+                                }
+                            }
+                        }
+                        .hidden()
+                        .fixedSize()
+                    )
+            } else if let lastSong = lastSong {
+                // Show last song content during collapse animation
+                VisibleNowPlayingContent(song: lastSong, width: animatedWidth)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        MenuBarPopup.show(rect: widgetFrame, id: "nowplaying") {
+                            NowPlayingPopup(configProvider: configProvider)
+                        }
+                    }
+            } else {
+                // Show music icon when no song is playing
+                Image(systemName: "music.note")
+                    .font(.system(size: 12))
+                    .foregroundColor(.foreground)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        MenuBarPopup.show(rect: widgetFrame, id: "nowplaying") {
+                            NowPlayingPopup(configProvider: configProvider)
+                        }
+                    }
+            }
+        }
+        .onChange(of: playingManager.nowPlaying) { oldValue, newValue in
+            if oldValue != nil && newValue == nil {
+                // Song stopped - save last song and animate collapse
+                lastSong = oldValue
+                withAnimation(.smooth(duration: 0.3)) {
+                    animatedWidth = iconWidth
+                }
+                // Clear lastSong shortly after animation starts for smoother transition
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    lastSong = nil
+                }
+            } else if newValue != nil {
+                // New song started - clear last song immediately
+                lastSong = nil
             }
         }
         .background(
@@ -56,26 +105,13 @@ struct NowPlayingContent: View {
     var foregroundHeight: CGFloat { configManager.config.experimental.foreground.resolveHeight() }
     
     var body: some View {
-        Group {
-            if foregroundHeight < 38 {
-                HStack(spacing: 8) {
-                    AlbumArtView(song: song)
-                    SongTextView(song: song)
-                }
-            } else {
-                HStack(spacing: 8) {
-                    AlbumArtView(song: song)
-                    SongTextView(song: song)
-                }
-                .padding(.horizontal, foregroundHeight < 45 ? 8 : 12)
-                .frame(height: foregroundHeight < 45 ? 30 : 38)
-                .background(configManager.config.experimental.foreground.widgetsBackground.blur)
-                .clipShape(Capsule())
-                .overlay(
-                    Capsule().stroke(Color.noActive, lineWidth: 1)
-                )
+        HStack(spacing: 8) {
+            AlbumArtView(song: song)
+            if song.state != .paused {
+                SongTextView(song: song)
             }
         }
+        .padding(.horizontal, 0)
         .foregroundColor(.foreground)
     }
 }
@@ -112,7 +148,7 @@ struct VisibleNowPlayingContent: View {
 
     var body: some View {
         NowPlayingContent(song: song)
-            .frame(width: width, height: 38)
+            .frame(width: width, height: 30)
             .animation(.smooth(duration: 0.1), value: song)
             .transition(.blurReplace)
     }
@@ -135,11 +171,6 @@ struct AlbumArtView: View {
             .scaleEffect(song.state == .paused ? 0.9 : 1)
             .brightness(song.state == .paused ? -0.3 : 0)
 
-            if song.state == .paused {
-                Image(systemName: "pause.fill")
-                    .foregroundColor(.icon)
-                    .transition(.blurReplace)
-            }
         }
         .animation(.smooth(duration: 0.1), value: song.state == .paused)
     }
@@ -161,13 +192,19 @@ struct SongTextView: View {
                     .font(.system(size: 11))
                     .fontWeight(.medium)
                     .padding(.trailing, 2)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
                 Text(song.artist)
                     .opacity(0.8)
                     .font(.system(size: 10))
                     .padding(.trailing, 2)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
             } else {
                 Text(song.artist + " — " + song.title)
                     .font(.system(size: 12))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
             }
         }
         // Disable animations for text changes.

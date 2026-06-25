@@ -4,6 +4,8 @@ struct YabaiWindow: WindowModel {
     let id: Int
     let title: String
     let appName: String?
+    let appBundleId: String? = nil
+    let processId: Int?
     let isFocused: Bool
     let stackIndex: Int
     var appIcon: NSImage?
@@ -17,6 +19,7 @@ struct YabaiWindow: WindowModel {
         case spaceId = "space"
         case title
         case appName = "app"
+        case processId = "pid"
         case isFocused = "has-focus"
         case stackIndex = "stack-index"
         case isHidden = "is-hidden"
@@ -32,6 +35,7 @@ struct YabaiWindow: WindowModel {
             try container.decodeIfPresent(String.self, forKey: .title)
             ?? "Unnamed"
         appName = try container.decodeIfPresent(String.self, forKey: .appName)
+        processId = try container.decodeIfPresent(Int.self, forKey: .processId)
         isFocused = try container.decode(Bool.self, forKey: .isFocused)
         stackIndex =
             try container.decodeIfPresent(Int.self, forKey: .stackIndex) ?? 0

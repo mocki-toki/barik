@@ -53,8 +53,7 @@ struct BatteryWidget: View {
             )
         }
         .experimentalConfiguration(cornerRadius: 15)
-        .frame(maxHeight: .infinity)
-        .background(.black.opacity(0.001))
+        .contentShape(Rectangle())
         .onTapGesture {
             MenuBarPopup.show(rect: rect, id: "battery") { BatteryPopup() }
         }

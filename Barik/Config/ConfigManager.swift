@@ -49,9 +49,7 @@ final class ConfigManager: ObservableObject {
             let content = try String(contentsOfFile: path, encoding: .utf8)
             let decoder = TOMLDecoder()
             let rootToml = try decoder.decode(RootToml.self, from: content)
-            DispatchQueue.main.async {
-                self.config = Config(rootToml: rootToml)
-            }
+            self.config = Config(rootToml: rootToml)
         } catch {
             initError = "Error parsing TOML file: \(error.localizedDescription)"
             print("Error when parsing TOML file:", error)
@@ -60,11 +58,12 @@ final class ConfigManager: ObservableObject {
 
     private func createDefaultConfig(at path: String) throws {
         let defaultTOML = """
-            # If you installed yabai or aerospace without using Homebrew,
+            # If you installed yabai, aerospace, or omniwm without using Homebrew,
             # manually set the path to the binary. For example:
             #
             # yabai.path = "/run/current-system/sw/bin/yabai"
             # aerospace.path = ...
+            # omniwm.path = "/Applications/OmniWM.app/Contents/MacOS/omniwmctl"
             
             theme = "system" # system, light, dark
 
@@ -83,6 +82,10 @@ final class ConfigManager: ObservableObject {
             space.show-key = true        # show space number (or character, if you use AeroSpace)
             window.show-title = true
             window.title.max-length = 50
+            window.group-by-app = false   # group windows of the same application under one icon
+            # Hide matching apps from the spaces widget.
+            # Entries can be app names (all WMs) or bundle identifiers (OmniWM).
+            # window.ignore-list = ["Barik", "com.apple.systempreferences"]
 
             [widgets.default.battery]
             show-percentage = true
@@ -116,7 +119,9 @@ final class ConfigManager: ObservableObject {
             guard let self = self, let path = self.configFilePath else {
                 return
             }
-            self.parseConfigFile(at: path)
+            DispatchQueue.main.async {
+                self.parseConfigFile(at: path)
+            }
         }
         fileWatchSource?.setCancelHandler { [weak self] in
             if let fd = self?.fileDescriptor, fd != -1 {

@@ -195,6 +195,7 @@ final class NowPlayingManager: ObservableObject {
 
     @Published private(set) var nowPlaying: NowPlayingSong?
     private var cancellable: AnyCancellable?
+    private var isFetching = false
 
     private init() {
         cancellable = Timer.publish(every: 0.3, on: .main, in: .common)
@@ -206,10 +207,13 @@ final class NowPlayingManager: ObservableObject {
 
     /// Updates the now playing song asynchronously.
     private func updateNowPlaying() {
+        guard !isFetching else { return }
+        isFetching = true
         DispatchQueue.global(qos: .background).async {
             let song = NowPlayingProvider.fetchNowPlaying()
             DispatchQueue.main.async { [weak self] in
                 self?.nowPlaying = song
+                self?.isFetching = false
             }
         }
     }

@@ -30,11 +30,17 @@ struct MenuBarPopupView<Content: View>: View {
     }
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
+        let position = configManager.config.experimental.foreground.position
+        let topPadding = configManager.config.experimental.foreground.topPadding
+        let popupOffset = configManager.config.experimental.foreground.popupOffset
+        let isTop = position == .top
+        
+        ZStack(alignment: isTop ? .topTrailing : .bottomTrailing) {
             content
                 .background(Color.black)
                 .cornerRadius(((1.0 - animationValue) * 1) + 40)
-                .padding(.top, foregroundHeight + 5)
+                .padding(.top, isTop ? topPadding + popupOffset : 0)
+                .padding(.bottom, isTop ? 0 : foregroundHeight + popupOffset)
                 .offset(x: computedOffset, y: computedYOffset)
                 .shadow(radius: 30)
                 .blur(radius: (1.0 - (0.1 + 0.9 * animationValue)) * 20)

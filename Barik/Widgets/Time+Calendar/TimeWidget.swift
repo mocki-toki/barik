@@ -35,11 +35,12 @@ struct TimeWidget: View {
             }
         }
         .font(.headline)
-        .foregroundStyle(.foregroundOutside)
-        .shadow(color: .foregroundShadowOutside, radius: 3)
+        .foregroundStyle(Color.foreground)
+        .shadow(color: Color.foregroundShadow, radius: 3)
         .onReceive(timer) { date in
             currentTime = date
         }
+        .padding(.horizontal, 0)
         .background(
             GeometryReader { geometry in
                 Color.clear
@@ -53,8 +54,7 @@ struct TimeWidget: View {
             }
         )
         .experimentalConfiguration(cornerRadius: 15)
-        .frame(maxHeight: .infinity)
-        .background(.black.opacity(0.001))
+        .contentShape(Rectangle())
         .monospacedDigit()
         .onTapGesture {
             MenuBarPopup.show(rect: rect, id: "calendar") {

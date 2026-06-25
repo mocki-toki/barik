@@ -4,6 +4,8 @@ struct AeroWindow: WindowModel {
     let id: Int
     let title: String
     let appName: String?
+    let appBundleId: String? = nil
+    let processId: Int? = nil
     var isFocused: Bool = false
     var appIcon: NSImage?
     let workspace: String?

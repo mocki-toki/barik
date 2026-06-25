@@ -10,6 +10,8 @@ protocol WindowModel: Identifiable, Equatable, Codable {
     var id: Int { get }
     var title: String { get }
     var appName: String? { get }
+    var appBundleId: String? { get }
+    var processId: Int? { get }
     var isFocused: Bool { get }
     var appIcon: NSImage? { get set }
 }
@@ -28,20 +30,44 @@ struct AnyWindow: Identifiable, Equatable {
     let id: Int
     let title: String
     let appName: String?
+    let appBundleId: String?
+    let processId: Int?
     let isFocused: Bool
     let appIcon: NSImage?
+    let windowCount: Int?
+    let groupedWindows: [AnyWindow]?
 
     init<W: WindowModel>(_ window: W) {
         self.id = window.id
         self.title = window.title
         self.appName = window.appName
+        self.appBundleId = window.appBundleId
+        self.processId = window.processId
         self.isFocused = window.isFocused
         self.appIcon = window.appIcon
+        self.windowCount = nil
+        self.groupedWindows = nil
+    }
+
+    init(id: Int, title: String, appName: String?, appBundleId: String?, processId: Int?, isFocused: Bool, appIcon: NSImage?, windowCount: Int?, groupedWindows: [AnyWindow]?) {
+        self.id = id
+        self.title = title
+        self.appName = appName
+        self.appBundleId = appBundleId
+        self.processId = processId
+        self.isFocused = isFocused
+        self.appIcon = appIcon
+        self.windowCount = windowCount
+        self.groupedWindows = groupedWindows
     }
 
     static func == (lhs: AnyWindow, rhs: AnyWindow) -> Bool {
         return lhs.id == rhs.id && lhs.title == rhs.title
-            && lhs.appName == rhs.appName && lhs.isFocused == rhs.isFocused
+            && lhs.appName == rhs.appName
+            && lhs.appBundleId == rhs.appBundleId
+            && lhs.processId == rhs.processId
+            && lhs.isFocused == rhs.isFocused
+            && lhs.windowCount == rhs.windowCount
     }
 }
 
@@ -55,6 +81,8 @@ struct AnySpace: Identifiable, Equatable {
             self.id = aero.workspace
         } else if let yabai = space as? YabaiSpace {
             self.id = String(yabai.id)
+        } else if let omniwm = space as? OmniWMSpace {
+            self.id = omniwm.rawName
         } else {
             self.id = "0"
         }

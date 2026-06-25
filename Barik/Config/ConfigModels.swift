@@ -5,6 +5,7 @@ struct RootToml: Decodable {
     var theme: String?
     var yabai: YabaiConfig?
     var aerospace: AerospaceConfig?
+    var omniwm: OmniWMConfig?
     var experimental: ExperimentalConfig?
     var widgets: WidgetsSection
 
@@ -12,6 +13,7 @@ struct RootToml: Decodable {
         self.theme = nil
         self.yabai = nil
         self.aerospace = nil
+        self.omniwm = nil
         self.widgets = WidgetsSection(displayed: [], others: [:])
     }
 }
@@ -33,6 +35,10 @@ struct Config {
     
     var aerospace: AerospaceConfig {
         rootToml.aerospace ?? AerospaceConfig()
+    }
+    
+    var omniwm: OmniWMConfig {
+        rootToml.omniwm ?? OmniWMConfig()
     }
     
     var experimental: ExperimentalConfig {
@@ -246,6 +252,22 @@ struct AerospaceConfig: Decodable {
     }
 }
 
+struct OmniWMConfig: Decodable {
+    let path: String
+
+    init() {
+        if FileManager.default.fileExists(atPath: "/Applications/OmniWM.app/Contents/MacOS/omniwmctl") {
+            self.path = "/Applications/OmniWM.app/Contents/MacOS/omniwmctl"
+        } else if FileManager.default.fileExists(atPath: "/opt/homebrew/bin/omniwmctl") {
+            self.path = "/opt/homebrew/bin/omniwmctl"
+        } else if FileManager.default.fileExists(atPath: "/usr/local/bin/omniwmctl") {
+            self.path = "/usr/local/bin/omniwmctl"
+        } else {
+            self.path = "/Applications/OmniWM.app/Contents/MacOS/omniwmctl"
+        }
+    }
+}
+
 struct ExperimentalConfig: Decodable {
     let foreground: ForegroundConfig
     let background: BackgroundConfig
@@ -271,12 +293,18 @@ struct ForegroundConfig: Decodable {
     let horizontalPadding: CGFloat
     let widgetsBackground: WidgetBackgroundConfig
     let spacing: CGFloat
+    let position: BarPosition
+    let topPadding: CGFloat
+    let popupOffset: CGFloat
     
     init() {
         self.height = .barikDefault
         self.horizontalPadding = Constants.menuBarHorizontalPadding
         self.widgetsBackground = WidgetBackgroundConfig()
         self.spacing = 15
+        self.position = .top
+        self.topPadding = 0
+        self.popupOffset = 5
     }
     
     init(from decoder: Decoder) throws {
@@ -285,6 +313,9 @@ struct ForegroundConfig: Decodable {
         horizontalPadding = try container.decodeIfPresent(CGFloat.self, forKey: .horizontalPadding) ?? Constants.menuBarHorizontalPadding
         widgetsBackground = try container.decodeIfPresent(WidgetBackgroundConfig.self, forKey: .widgetsBackground) ?? WidgetBackgroundConfig()
         spacing = try container.decodeIfPresent(CGFloat.self, forKey: .spacing) ?? 15
+        position = try container.decodeIfPresent(BarPosition.self, forKey: .position) ?? .top
+        topPadding = try container.decodeIfPresent(CGFloat.self, forKey: .topPadding) ?? 0
+        popupOffset = try container.decodeIfPresent(CGFloat.self, forKey: .popupOffset) ?? 5
     }
     
     enum CodingKeys: String, CodingKey {
@@ -292,6 +323,9 @@ struct ForegroundConfig: Decodable {
         case horizontalPadding = "horizontal-padding"
         case widgetsBackground = "widgets-background"
         case spacing
+        case position
+        case topPadding = "top-padding"
+        case popupOffset = "popup-offset"
     }
     
     func resolveHeight() -> CGFloat {
@@ -445,5 +479,10 @@ enum BackgroundForegroundHeight: Decodable {
             )
         )
     }
+}
+
+enum BarPosition: String, Decodable {
+    case top
+    case bottom
 }
 
