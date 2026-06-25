@@ -46,8 +46,7 @@ class OmniWMSpacesProvider: SpacesProvider, SwitchableSpacesProvider {
             uniqueKeysWithValues: spaces.map { ($0.rawName, $0) })
 
         var nextWindowIdMap: [Int: String] = [:]
-        let filteredWindows = windows.filter { $0.appName != "Barik" }
-        for window in filteredWindows {
+        for window in windows {
             var mutableWindow = window
             nextWindowIdMap[window.id] = window.opaqueId
             // isFocused is already set from the JSON

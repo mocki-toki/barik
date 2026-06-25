@@ -182,23 +182,17 @@ class SpacesViewModel: ObservableObject {
     private func shouldIgnore(window: AnyWindow, ignoredApplications: Set<String>) -> Bool {
         let appName = window.appName?.normalizedApplicationIdentifier
         let bundleId = window.appBundleId?.normalizedApplicationIdentifier
-        let title = window.title.normalizedApplicationIdentifier
-        
+
         let resolvedMetadata = RunningApplicationCache.shared.metadata(for: window.processId)
         let resolvedAppName = resolvedMetadata?.localizedName?.normalizedApplicationIdentifier
         let resolvedBundleId = resolvedMetadata?.bundleIdentifier?.normalizedApplicationIdentifier
 
-        // Check app identifiers with fuzzy matching
+        // Check app identifiers (app name or bundle ID) with exact matching
         let appIdentifiers = [appName, bundleId, resolvedAppName, resolvedBundleId].compactMap { $0 }
         for identifier in appIdentifiers {
-            if ignoredApplications.contains(where: { identifier.matchesIgnoredApplication($0) }) {
+            if ignoredApplications.contains(identifier) {
                 return true
             }
-        }
-        
-        // Check window title with strict exact matching only
-        if ignoredApplications.contains(title) {
-            return true
         }
 
         return false
@@ -229,20 +223,6 @@ private extension AnySpace {
 private extension String {
     var normalizedApplicationIdentifier: String {
         trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-    }
-
-    func matchesIgnoredApplication(_ ignoredIdentifier: String) -> Bool {
-        if self == ignoredIdentifier {
-            return true
-        }
-
-        // Bundle IDs may legitimately vary by helper suffixes.
-        if self.contains(".") || ignoredIdentifier.contains(".") {
-            return self.hasPrefix("\(ignoredIdentifier).")
-                || ignoredIdentifier.hasPrefix("\(self).")
-        }
-
-        return self.contains(ignoredIdentifier)
     }
 }
 
